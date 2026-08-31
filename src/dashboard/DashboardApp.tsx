@@ -4,7 +4,7 @@ import { Brand } from '../components/Brand';
 import { Modal } from '../components/Modal';
 import { CURRENT_SESSION } from '../lib/storage';
 import { isChromeExtension } from '../lib/tabs';
-import { PortraitView } from './components/PortraitView';
+import { AnalysisView } from './components/AnalysisView';
 import { useDashboardStore } from './store';
 
 function PrivacyModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -14,11 +14,11 @@ function PrivacyModal({ open, onClose }: { open: boolean; onClose: () => void })
         <p className="modal-lede">Tabscope reads metadata, not pages.</p>
         <div className="privacy-row">
           <span>Stays on device</span>
-          <p>Raw URLs before sanitization, browser tab IDs, duplicate detection, your feedback, and up to 30 days of compact thread patterns.</p>
+          <p>Raw URLs, query parameters, fragments, browser tab IDs, duplicate detection, and your saved result.</p>
         </div>
         <div className="privacy-row">
           <span>May reach your model</span>
-          <p>Redacted titles, normalized domains, synthetic window/group labels, pinned/active state, coarse age buckets, and earlier feedback.</p>
+          <p>Redacted titles, normalized domains, synthetic window/group labels, pinned/active state, and coarse age buckets such as “today” or “older.”</p>
         </div>
         <div className="privacy-row">
           <span>Never read in v0</span>
@@ -44,8 +44,8 @@ function PermissionScreen({
       <section className="chrome-onboarding">
         <span className="chrome-onboarding-icon"><Brand /></span>
         <div className="chrome-onboarding-copy">
-          <h1>Meet the versions of you inside your browser</h1>
-          <p>Tabscope begins with a playful portrait of what is open, then grows more specific when patterns return.</p>
+          <h1>See what your open tabs are adding up to</h1>
+          <p>Tabscope finds the threads you keep returning to and offers one useful next step.</p>
           {error && <p className="inline-error">{error}</p>}
         </div>
         <div className="chrome-permission-note">
@@ -57,7 +57,7 @@ function PermissionScreen({
         </div>
         <div className="chrome-onboarding-actions">
           <button className="chrome-secondary-button" onClick={onDemo}>Preview</button>
-          <button className="chrome-action-button" onClick={onAnalyze}>Meet my browser <ArrowRight size={16} /></button>
+          <button className="chrome-action-button" onClick={onAnalyze}>Continue <ArrowRight size={16} /></button>
         </div>
       </section>
     </main>
@@ -67,10 +67,10 @@ function PermissionScreen({
 function AnalyzingScreen() {
   const [messageIndex, setMessageIndex] = useState(0);
   const messages = [
-    'Gathering the open pieces',
-    'Letting related tabs find each other',
-    'Looking for the characters inside',
-    'Drawing the first portrait',
+    'Taking a private glance',
+    'Finding the threads between your tabs',
+    'Noticing what keeps pulling you back',
+    'Reflecting it back, gently',
   ];
 
   useEffect(() => {
@@ -81,7 +81,7 @@ function AnalyzingScreen() {
   return (
     <main className="analyzing-screen">
       <div className="analysis-orbit" aria-hidden="true"><i /><i /><i /><span /></div>
-      <p className="eyebrow">Your tabs are introducing themselves</p>
+      <p className="eyebrow">Looking for the shape of what’s on your mind</p>
       <h1>{messages[messageIndex]}<span className="ellipsis">…</span></h1>
       <div className="analysis-progress"><i style={{ width: `${(messageIndex + 1) * 25}%` }} /></div>
       <p>Only sanitized metadata is being analyzed.</p>
@@ -105,11 +105,14 @@ export function DashboardApp() {
     stage,
     analysis,
     data,
+    previousSession,
     error,
     notice,
+    revealStep,
     initialize,
     runAnalysis,
     syncCurrentSession,
+    setRevealStep,
   } = useDashboardStore();
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
@@ -126,12 +129,18 @@ export function DashboardApp() {
     return () => chrome.storage.onChanged.removeListener(onStorageChange);
   }, [syncCurrentSession]);
 
+  useEffect(() => {
+    if (stage !== 'results' || revealStep >= 5) return;
+    const timer = window.setTimeout(() => setRevealStep(revealStep + 1), revealStep === 0 ? 180 : 240);
+    return () => window.clearTimeout(timer);
+  }, [revealStep, setRevealStep, stage]);
+
   return (
     <div className="app-shell">
       <header className="topbar">
         <Brand />
         <div className="topbar-actions">
-          {stage === 'results' && <button className="topbar-button" onClick={() => void runAnalysis(false)}><RefreshCcw size={14} /> Look again</button>}
+          {stage === 'results' && <button className="topbar-button" onClick={() => void runAnalysis(false)}><RefreshCcw size={14} /> Reflect again</button>}
           <button className="topbar-button" onClick={() => setPrivacyOpen(true)}><Eye size={14} /> Privacy</button>
         </div>
       </header>
@@ -141,10 +150,12 @@ export function DashboardApp() {
       {stage === 'analyzing' && <AnalyzingScreen />}
       {stage === 'error' && <ErrorScreen error={error} retry={() => void runAnalysis(!isChromeExtension())} />}
       {stage === 'results' && analysis && data && (
-        <PortraitView
+        <AnalysisView
           analysis={analysis}
           data={data}
+          previousSession={previousSession}
           notice={notice}
+          revealStep={revealStep}
           onRefresh={() => void runAnalysis(false)}
         />
       )}

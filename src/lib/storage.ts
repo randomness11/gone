@@ -1,6 +1,5 @@
 import type {
   AnalysisResult,
-  BrowserMemory,
   LiveReflectionSettings,
   LiveReflectionStatus,
   PreprocessedTabs,
@@ -8,7 +7,6 @@ import type {
   Session,
   SnapshotDigest,
 } from '../types';
-import { makeBrowserMemorySnapshot } from './portrait';
 import { isChromeExtension } from './tabs';
 
 export const CURRENT_SESSION = 'tabscope.currentSession';
@@ -18,7 +16,6 @@ export const LIVE_STATUS = 'tabscope.liveStatus';
 export const SNAPSHOT_DIGEST = 'tabscope.snapshotDigest';
 export const REFLECTION_FEEDBACK = 'tabscope.reflectionFeedback';
 export const LIVE_AUTOSTART_MIGRATION = 'tabscope.liveAutostart.v1';
-export const BROWSER_MEMORY = 'tabscope.browserMemory.v1';
 
 export const DEFAULT_LIVE_SETTINGS: LiveReflectionSettings = {
   enabled: true,
@@ -71,10 +68,7 @@ export async function saveSession(preprocessed: PreprocessedTabs, analysis: Anal
   const session = makeSession(preprocessed, analysis);
   const current = await loadCurrentSession();
   if (current && current.id !== session.id) await writeValue(PREVIOUS_SESSION, current);
-  await Promise.all([
-    writeValue(CURRENT_SESSION, session),
-    updateBrowserMemory(preprocessed, analysis),
-  ]);
+  await writeValue(CURRENT_SESSION, session);
   return session;
 }
 
@@ -84,37 +78,6 @@ export async function loadCurrentSession(): Promise<Session | undefined> {
 
 export async function loadPreviousSession(): Promise<Session | undefined> {
   return readValue<Session>(PREVIOUS_SESSION);
-}
-
-export async function loadBrowserMemory(): Promise<BrowserMemory | undefined> {
-  return readValue<BrowserMemory>(BROWSER_MEMORY);
-}
-
-async function updateBrowserMemory(preprocessed: PreprocessedTabs, analysis: AnalysisResult): Promise<void> {
-  const now = Date.now();
-  const cutoff = preprocessed.generatedAt - 30 * 24 * 60 * 60_000;
-  const snapshot = makeBrowserMemorySnapshot(preprocessed, analysis);
-  const current = await loadBrowserMemory();
-  const existing = (current?.snapshots ?? []).filter((item) => item.capturedAt >= cutoff && item.id !== snapshot.id);
-  const last = existing.at(-1);
-  const signature = (item: typeof snapshot) => JSON.stringify({
-    tabCount: item.tabCount,
-    threads: item.threads.map((thread) => ({ key: thread.key, tabCount: thread.tabCount, domains: thread.domains, evidenceTitles: thread.evidenceTitles })),
-  });
-  const replacesRecentDuplicate = last
-    && snapshot.capturedAt - last.capturedAt < 30 * 60_000
-    && signature(last) === signature(snapshot);
-  const snapshots = existing
-    .filter((item) => !replacesRecentDuplicate || item.id !== last.id)
-    .concat(snapshot)
-    .sort((a, b) => a.capturedAt - b.capturedAt)
-    .slice(-720);
-  await writeValue(BROWSER_MEMORY, {
-    version: 1,
-    startedAt: current?.startedAt ?? snapshot.capturedAt,
-    updatedAt: now,
-    snapshots,
-  } satisfies BrowserMemory);
 }
 
 export async function loadLiveSettings(): Promise<LiveReflectionSettings> {
@@ -172,7 +135,7 @@ export async function saveReflectionFeedback(feedback: ReflectionFeedback): Prom
 }
 
 export async function clearTabscopeMemory(): Promise<void> {
-  const keys = [CURRENT_SESSION, PREVIOUS_SESSION, LIVE_STATUS, SNAPSHOT_DIGEST, REFLECTION_FEEDBACK, BROWSER_MEMORY];
+  const keys = [CURRENT_SESSION, PREVIOUS_SESSION, LIVE_STATUS, SNAPSHOT_DIGEST, REFLECTION_FEEDBACK];
   if (isChromeExtension()) await chrome.storage.local.remove(keys);
   else keys.forEach((key) => localStorage.removeItem(key));
 }

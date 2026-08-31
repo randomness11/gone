@@ -7,7 +7,6 @@ import {
   loadCurrentSession,
   loadLiveStatus,
   loadPreviousSession,
-  loadReflectionFeedback,
   saveLiveStatus,
   saveSession,
   saveSnapshotDigest,
@@ -62,14 +61,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
     const [permission, session, previousSession] = await Promise.all([hasTabsPermission(), loadCurrentSession(), loadPreviousSession()]);
     if (session?.analysis && permission) {
-      const restoredData = dataFromSession(session);
-      await saveSession(restoredData, session.analysis);
       set({
         stage: 'results',
         session,
         previousSession,
         analysis: session.analysis,
-        data: restoredData,
+        data: dataFromSession(session),
         revealStep: 5,
       });
       return;
@@ -92,7 +89,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       if (rawTabs.length === 0) throw new Error('No readable tabs were found. Open a few normal web pages and try again.');
       const data = preprocessTabs(rawTabs);
 
-      const analysis: AnalysisResult = buildLocalAnalysis(data, demo ? 'mock' : 'local', await loadReflectionFeedback());
+      const analysis: AnalysisResult = buildLocalAnalysis(data, demo ? 'mock' : 'local');
       const session = await saveSession(data, analysis);
       const previousSession = await loadPreviousSession();
       const previousStatus = await loadLiveStatus();

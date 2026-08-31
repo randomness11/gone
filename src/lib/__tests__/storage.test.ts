@@ -4,7 +4,6 @@ import { preprocessTabs } from '../preprocessing';
 import {
   clearTabscopeMemory,
   ensureLiveReflectionAutostart,
-  loadBrowserMemory,
   loadCurrentSession,
   loadPreviousSession,
   saveLiveSettings,
@@ -35,19 +34,6 @@ describe('reflection memory', () => {
 
     expect((await loadCurrentSession())?.createdAt).toBe(2_000);
     expect((await loadPreviousSession())?.createdAt).toBe(1_000);
-    expect((await loadBrowserMemory())?.snapshots).toHaveLength(2);
-  });
-
-  it('replaces a refined version of the same snapshot instead of counting it twice', async () => {
-    const data = preprocessTabs([
-      { title: 'Building Tabscope', url: 'https://developer.chrome.com/docs/extensions', windowId: 1 },
-      { title: 'Manifest V3', url: 'https://developer.chrome.com/docs/extensions/manifest', windowId: 1 },
-    ], 1_000);
-    const analysis = buildLocalAnalysis(data);
-    await saveSession(data, analysis);
-    await saveSession(data, { ...analysis, provider: 'llm', summary: 'A sharper version.' });
-
-    expect((await loadBrowserMemory())?.snapshots).toHaveLength(1);
   });
 
   it('clears both current and previous reflection memory', async () => {

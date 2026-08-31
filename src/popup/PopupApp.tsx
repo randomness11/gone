@@ -1,7 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Brand } from '../components/Brand';
-import { describeMissionCharacter } from '../lib/portrait';
 import { loadCurrentSession } from '../lib/storage';
 import { collectCurrentTabs, hasTabsPermission, isChromeExtension } from '../lib/tabs';
 
@@ -11,8 +10,7 @@ export function PopupApp() {
 
   useEffect(() => {
     void Promise.all([hasTabsPermission(), loadCurrentSession()]).then(async ([permission, session]) => {
-      const primary = session?.analysis?.missions[0];
-      setMission(primary ? describeMissionCharacter(primary).label : undefined);
+      setMission(session?.analysis?.missions[0]?.title);
       setTabCount(permission ? (await collectCurrentTabs()).length : session?.tabCount);
     });
   }, []);
@@ -29,9 +27,9 @@ export function PopupApp() {
         {tabCount !== undefined && <span className="popup-status">{tabCount} tabs open</span>}
       </div>
       <section className="popup-mission">
-        <span>Your browser right now</span>
+        <span>Current thread</span>
         <h2>{mission ?? 'Your tabs haven’t been read yet.'}</h2>
-        <p>{mission ? 'One character in the portrait Tabscope is building with you.' : 'Open Tabscope to meet the versions of you inside your browser.'}</p>
+        <p>{mission ? 'A reflection based on what is open right now.' : 'Open Tabscope to get your first private reflection.'}</p>
       </section>
       <button className="chrome-action-button popup-action" onClick={openDashboard}>{mission ? 'Open Tabscope' : 'Get started'} <ArrowRight size={16} /></button>
       <p className="popup-foot">Page contents are never read</p>
