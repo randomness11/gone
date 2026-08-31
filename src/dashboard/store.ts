@@ -12,6 +12,7 @@ import {
 } from '../lib/storage';
 import {
   collectCurrentTabs,
+  hasFaviconPermission,
   hasTabsPermission,
   isChromeExtension,
   requestAnalysisPermission,
@@ -58,8 +59,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       return;
     }
 
-    const [permission, session, previousSession] = await Promise.all([hasTabsPermission(), loadCurrentSession(), loadPreviousSession()]);
-    if (session?.analysis && permission) {
+    const [permission, faviconPermission, session, previousSession] = await Promise.all([
+      hasTabsPermission(),
+      hasFaviconPermission(),
+      loadCurrentSession(),
+      loadPreviousSession(),
+    ]);
+    if (session?.analysis && permission && faviconPermission) {
       set({
         stage: 'results',
         session,

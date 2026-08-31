@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tabscope",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "A private reflection of where your recent browser time went.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -10,7 +10,7 @@
     "128": "icons/icon-128.png"
   },
   "permissions": ["storage", "alarms"],
-  "optional_permissions": ["tabs"],
+  "optional_permissions": ["tabs", "favicon"],
   "background": {
     "service_worker": "assets/background.js",
     "type": "module"

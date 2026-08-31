@@ -50,7 +50,7 @@ function PermissionScreen({
           <LockKeyhole size={18} />
           <div>
             <strong>Your pages stay private</strong>
-            <p>Tabscope stores active-tab time, tab titles, and cleaned URL hints locally. It never reads page contents.</p>
+            <p>Tabscope stores active-tab time, tab titles, cleaned URL hints, and Chrome’s cached site icons locally. It never reads page contents.</p>
           </div>
         </div>
         <div className="chrome-onboarding-actions">

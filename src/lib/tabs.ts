@@ -9,10 +9,15 @@ export async function hasTabsPermission(): Promise<boolean> {
   return chrome.permissions.contains({ permissions: ['tabs'] });
 }
 
+export async function hasFaviconPermission(): Promise<boolean> {
+  if (!isChromeExtension()) return false;
+  return chrome.permissions.contains({ permissions: ['favicon'] });
+}
+
 export async function requestAnalysisPermission(modelBaseUrl?: string): Promise<boolean> {
   if (!isChromeExtension()) return true;
 
-  const request: chrome.permissions.Permissions = { permissions: ['tabs'] };
+  const request: chrome.permissions.Permissions = { permissions: ['tabs', 'favicon'] };
   if (modelBaseUrl) {
     try {
       const origin = new URL(modelBaseUrl).origin;

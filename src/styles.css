@@ -406,10 +406,16 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
 .mirror-hero > div, .mirror-empty > div { margin-top: 19px; color: var(--chrome-secondary); font-size: 15px; line-height: 24px; }
 .mirror-hero > div strong { color: var(--chrome-text); font-weight: 500; }
 .mirror-breakdown { padding: 30px 0 26px; display: grid; gap: 15px; }
-.mirror-row { min-height: 20px; display: grid; grid-template-columns: 8px 120px minmax(120px, 1fr) 66px; align-items: center; gap: 14px; }
+.mirror-row { min-height: 22px; display: grid; grid-template-columns: 18px 120px minmax(120px, 1fr) 66px; align-items: center; gap: 12px; }
 .mirror-row > strong { overflow: hidden; font-size: 11px; line-height: 17px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .mirror-row > span:last-child { color: var(--chrome-secondary); font-size: 10px; text-align: right; }
 .mirror-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--chrome-blue); }
+.mirror-favicon { width: 18px; height: 18px; position: relative; display: grid; place-items: center; overflow: hidden; border-radius: 4px; background: var(--chrome-blue-soft); color: var(--chrome-blue); font-size: 9px; line-height: 1; font-weight: 600; }
+.mirror-favicon > img { width: 16px; height: 16px; position: absolute; inset: 1px; object-fit: contain; }
+.mirror-favicon-2 { background: #493331; color: #f28b82; }
+.mirror-favicon-3 { background: #4b442b; color: #fdd663; }
+.mirror-favicon-4 { background: #263e30; color: #81c995; }
+.mirror-favicon-5 { background: #41304d; color: #c58af9; }
 .mirror-track { height: 6px; overflow: hidden; border-radius: 3px; background: var(--chrome-surface); }
 .mirror-fill { height: 100%; display: block; border-radius: inherit; background: var(--chrome-blue); }
 .mirror-dot-2, .mirror-fill-2 { background: #f28b82; }
@@ -438,7 +444,7 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
   .mirror-ranges button { flex: 1; }
   .mirror-hero { padding: 56px 0 36px; }
   .mirror-hero h1 { font-size: 48px; }
-  .mirror-row { grid-template-columns: 8px 84px minmax(70px, 1fr) 52px; gap: 10px; }
+  .mirror-row { grid-template-columns: 18px 84px minmax(70px, 1fr) 52px; gap: 10px; }
   .mirror-summary { flex-wrap: wrap; gap: 6px 18px; }
   .mirror-privacy { text-align: left; }
 }

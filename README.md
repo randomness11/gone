@@ -34,8 +34,9 @@ Never read:
 - `storage`: stores the local attention ledger.
 - `alarms`: creates the one-minute timing checkpoint.
 - `tabs` (optional): requested when the user enables the mirror.
+- `favicon` (optional): uses Chrome's cached site icons in the local breakdown.
 
-There is no content script, host access, browsing-history permission, or page-content access.
+There is no content script, host access, browsing-history permission, third-party logo service, or page-content access.
 
 ## Install locally
 
@@ -52,7 +53,7 @@ Then:
 2. Enable **Developer mode**.
 3. If an older Tabscope points somewhere else, remove it.
 4. Click **Load unpacked** and select this repository’s `dist/` folder.
-5. Confirm the card shows version `0.4.3`.
+5. Confirm the card shows version `0.4.4`.
 6. Open a New Tab, click **Continue**, then browse normally.
 
 The first useful reflection appears after Tabscope has observed some active browsing. The page updates from local extension storage without a manual reload.

@@ -36,6 +36,14 @@ function rangeStart(range: RangeKey, now: number): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
+function faviconUrl(domain: string): string | undefined {
+  if (!isChromeExtension()) return undefined;
+  const url = new URL(chrome.runtime.getURL('/_favicon/'));
+  url.searchParams.set('pageUrl', `https://${domain}/`);
+  url.searchParams.set('size', '32');
+  return url.toString();
+}
+
 function demoLedger(now: number): AttentionLedger {
   return {
     dateKey: new Date(now).toISOString().slice(0, 10),
@@ -98,7 +106,10 @@ export function AttentionMirrorView() {
         {observedEnough && <section className="mirror-breakdown mirror-hour-chart" aria-label={`${selectedRange.label} attention breakdown`}>
           {visible.map((entry, index) => (
             <div className="mirror-row" key={entry.domain}>
-              <span className={`mirror-dot mirror-dot-${(index % 5) + 1}`} />
+              <span className={`mirror-favicon mirror-favicon-${(index % 5) + 1}`}>
+                <span>{domainName(entry.domain).charAt(0)}</span>
+                {faviconUrl(entry.domain) && <img src={faviconUrl(entry.domain)} alt="" onError={(event) => { event.currentTarget.hidden = true; }} />}
+              </span>
               <strong>{domainName(entry.domain)}</strong>
               <div className="mirror-track"><i className={`mirror-fill mirror-fill-${(index % 5) + 1}`} style={{ width: `${Math.max(3, (entry.totalMs / top.totalMs) * 100)}%` }} /></div>
               <span>{formatDuration(entry.totalMs)}</span>
