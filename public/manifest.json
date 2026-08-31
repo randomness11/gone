@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Tabscope",
+  "version": "0.1.1",
+  "description": "A private, gentle reflection of what your open tabs say you may be carrying right now.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["storage", "alarms"],
+  "optional_permissions": ["tabs", "tabGroups"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "chrome_url_overrides": {
+    "newtab": "dashboard.html"
+  },
+  "action": {
+    "default_title": "Open Tabscope",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+Shift+T", "mac": "MacCtrl+Shift+T" }
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
