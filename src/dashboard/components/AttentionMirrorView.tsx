@@ -4,7 +4,7 @@ import { ATTENTION_LEDGER, loadAttentionLedger } from '../../lib/storage';
 import { isChromeExtension } from '../../lib/tabs';
 import type { AttentionLedger } from '../../types';
 
-const LOOKBACK_MS = 15 * 60_000;
+const LOOKBACK_MS = 60 * 60_000;
 
 function domainName(domain: string): string {
   const part = domain.split('.')[0].replace(/[-_]/g, ' ');
@@ -52,19 +52,30 @@ export function AttentionMirrorView() {
   }, []);
 
   const summary = useMemo(() => summarizeAttention(ledger, now - LOOKBACK_MS, now), [ledger, now]);
+  const visible = summary.entries.slice(0, 6);
   const top = summary.entries[0];
   const second = summary.entries[1];
   const observedEnough = summary.totalMs >= 30_000 && Boolean(top);
   const reflection = observedEnough
-    ? `In the last 15 minutes, ${formatDuration(top.totalMs)} of observed time went to ${domainName(top.domain)}${second ? ` and ${formatDuration(second.totalMs)} to ${domainName(second.domain)}` : ''}.`
-    : 'Nothing observed in the last 15 minutes yet.';
+    ? `In the last hour, ${formatDuration(top.totalMs)} of observed time went to ${domainName(top.domain)}${second ? ` and ${formatDuration(second.totalMs)} to ${domainName(second.domain)}` : ''}.`
+    : 'Nothing observed in the last hour yet.';
 
   return (
     <main className="mirror-page">
       <section className="mirror-shell mirror-single">
         <p className="mirror-kicker">Your browser, reflected</p>
         <h1 className="mirror-line">{reflection}</h1>
-        <p className="mirror-privacy">Across focused Chrome windows · stored on this device</p>
+        {observedEnough && <section className="mirror-breakdown mirror-hour-chart" aria-label="Last hour attention breakdown">
+          {visible.map((entry, index) => (
+            <div className="mirror-row" key={entry.domain}>
+              <span className={`mirror-dot mirror-dot-${(index % 5) + 1}`} />
+              <strong>{domainName(entry.domain)}</strong>
+              <div className="mirror-track"><i className={`mirror-fill mirror-fill-${(index % 5) + 1}`} style={{ width: `${Math.max(3, (entry.totalMs / top.totalMs) * 100)}%` }} /></div>
+              <span>{formatDuration(entry.totalMs)}</span>
+            </div>
+          ))}
+        </section>}
+        <p className="mirror-privacy">Last hour · across focused Chrome windows · stored on this device</p>
       </section>
     </main>
   );
