@@ -53,7 +53,7 @@ Then:
 2. Enable **Developer mode**.
 3. If an older Tabscope points somewhere else, remove it.
 4. Click **Load unpacked** and select this repository’s `dist/` folder.
-5. Confirm the card shows version `0.4.4`.
+5. Confirm the card shows version `0.4.5`.
 6. Open a New Tab, click **Continue**, then browse normally.
 
 The first useful reflection appears after Tabscope has observed some active browsing. The page updates from local extension storage without a manual reload.
