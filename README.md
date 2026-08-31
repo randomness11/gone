@@ -1,17 +1,20 @@
 # Tabscope
 
-Tabscope is a Chrome New Tab extension that reflects the shape of your open attention back to you. It reads sanitized tab metadata, finds the human threads connecting those tabs, and offers a gentle place to restart.
+Tabscope is a private Chrome New Tab conscience. It notices where observed active-tab time actually went, what keeps pulling the user back, and the unfinished decision still sitting underneath it.
 
-The main surface is **Your browser remembers**:
+The New Tab surface deliberately contains only three things:
 
-- the thread you appear to be in the middle of;
-- a useful next step;
-- what meaningfully changed since the previous reflection;
-- other threads waiting nearby;
-- tabs that may be ready for a decision;
-- one unresolved question or connection worth noticing.
+- one timely observation;
+- an honest local attention breakdown;
+- one unresolved thread with a way to return, acknowledge, or resolve it.
 
-Nothing is automatically closed. A focus action groups matching tabs only after the user asks, and cleanup requires selecting every tab explicitly.
+The product stays quiet when it lacks evidence. Nothing is automatically closed, and cleanup still requires selecting every tab explicitly.
+
+## Local attention timing
+
+After tab permission is granted, the background worker observes active-tab transitions and checkpoints the current tab once per minute. It aggregates time by normalized domain for the current local day. Tabscope pages, browser-internal pages, unsupported URLs, and time while Chrome has no focused window are excluded.
+
+To avoid overstating time after a suspended worker or sleeping machine, any unchecked segment is capped at five minutes. This makes the displayed number a conservative measure of **observed active browser time**, not proof that the page was continuously read.
 
 ## Live reflection
 
@@ -32,6 +35,7 @@ Stays on the device:
 - raw URLs and Chrome tab IDs;
 - query parameters and fragments before sanitization;
 - duplicate detection and saved reflection history;
+- raw active-tab timing segments and the current local attention ledger;
 - user corrections and live-refresh settings.
 
 May be sent to the configured model:
@@ -41,6 +45,7 @@ May be sent to the configured model:
 - synthetic window and group labels;
 - pinned and active state;
 - coarse age buckets such as “today” or “older.”
+- aggregated active-tab minutes and revisit counts by normalized domain.
 
 Never read:
 
@@ -53,12 +58,12 @@ Sensitive query parameters, fragments, emails, obvious tokens, long opaque IDs, 
 ## Permissions
 
 - `storage`: saved reflections, settings, and corrections.
-- `alarms`: optional 10/30/60-minute live checks.
+- `alarms`: one-minute local timing checkpoints and 10/30/60-minute reflection checks.
 - `tabs` (optional): requested when the user begins a reflection.
 - `tabGroups` (optional): requested only when the user creates a focus group.
 - provider host access (optional): requested for the configured model endpoint.
 
-There is no content script, browsing-history permission, or idle-time tracking.
+There is no content script, browsing-history permission, or page-content access.
 
 ## Install locally
 
@@ -74,9 +79,9 @@ Then:
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
-3. Remove the newer foreground-time build if it is installed.
+3. Remove an older unpacked Tabscope build if Chrome points to a different folder.
 4. Click **Load unpacked** and select this repository’s `dist/` folder.
-5. Confirm that the extension card shows version `0.1.1`.
+5. Confirm that the extension card shows version `0.3.0`.
 6. Open a New Tab and click **Continue**.
 
 ## OpenRouter configuration
@@ -103,10 +108,11 @@ Key files:
 
 ```text
 public/manifest.json                    Manifest V3 permissions and New Tab override
-src/background/index.ts                optional live-reflection alarm and refresh pipeline
+src/background/index.ts                active-tab timing and live-reflection pipelines
 src/dashboard/DashboardApp.tsx         permission, analysis, and result states
-src/dashboard/components/AnalysisView.tsx  Chrome-native working-memory surface
+src/dashboard/components/AnalysisView.tsx  Chrome-native browser-conscience surface
 src/dashboard/store.ts                 manual analysis and live-session synchronization
 src/lib/privacy.ts                     title and URL sanitization boundary
 src/lib/live.ts                        local digest comparison and model-refresh policy
+src/lib/attention.ts                   conservative local active-tab timing ledger
 ```

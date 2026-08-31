@@ -14,11 +14,11 @@ function PrivacyModal({ open, onClose }: { open: boolean; onClose: () => void })
         <p className="modal-lede">Tabscope reads metadata, not pages.</p>
         <div className="privacy-row">
           <span>Stays on device</span>
-          <p>Raw URLs, query parameters, fragments, browser tab IDs, duplicate detection, and your saved result.</p>
+          <p>Raw URLs, query parameters, fragments, browser tab IDs, observed active-tab segments, duplicate detection, and your saved result.</p>
         </div>
         <div className="privacy-row">
           <span>May reach your model</span>
-          <p>Redacted titles, normalized domains, synthetic window/group labels, pinned/active state, and coarse age buckets such as “today” or “older.”</p>
+          <p>Redacted titles, normalized domains, synthetic window/group labels, pinned/active state, coarse age buckets, and aggregated active-tab minutes and revisit counts by domain.</p>
         </div>
         <div className="privacy-row">
           <span>Never read in v0</span>
@@ -45,14 +45,14 @@ function PermissionScreen({
         <span className="chrome-onboarding-icon"><Brand /></span>
         <div className="chrome-onboarding-copy">
           <h1>See what your open tabs are adding up to</h1>
-          <p>Tabscope finds the threads you keep returning to and offers one useful next step.</p>
+          <p>Tabscope notices where your browser time goes, what keeps pulling you back, and the decision still waiting underneath it.</p>
           {error && <p className="inline-error">{error}</p>}
         </div>
         <div className="chrome-permission-note">
           <LockKeyhole size={18} />
           <div>
             <strong>Your pages stay private</strong>
-            <p>Tabscope uses tab titles and cleaned URL hints. It never reads page contents.</p>
+            <p>Tabscope stores active-tab time, tab titles, and cleaned URL hints locally. It never reads page contents.</p>
           </div>
         </div>
         <div className="chrome-onboarding-actions">

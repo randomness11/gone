@@ -1,20 +1,23 @@
-import { ArrowRight, Check, Clock3, Focus, History, Layers3, Pause, RefreshCcw, Settings2, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, Check, Clock3, Pause, RefreshCcw, Settings2, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { preprocessTabs } from '../../lib/preprocessing';
 import {
   clearTabscopeMemory,
+  ATTENTION_LEDGER,
   DEFAULT_LIVE_SETTINGS,
   LIVE_SETTINGS,
   LIVE_STATUS,
   loadLiveSettings,
   loadLiveStatus,
+  loadAttentionLedger,
   saveLiveSettings,
   saveReflectionFeedback,
 } from '../../lib/storage';
-import { closeTabsByBrowserId, collectCurrentTabs, focusBrowserTabs, isChromeExtension } from '../../lib/tabs';
+import { activateBrowserTab, closeTabsByBrowserId, collectCurrentTabs, isChromeExtension } from '../../lib/tabs';
 import type {
   AnalysisResult,
+  AttentionLedger,
   CleanupClass,
   FeedbackKind,
   LiveReflectionSettings,
@@ -49,14 +52,6 @@ function focusPhrase(title?: string): string {
   return lowerFirst(withoutFraming);
 }
 
-function gentleNextStep(mission?: Mission): string {
-  if (!mission?.nextAction) {
-    return 'Maybe choose the one open tab that could move this forward, and let the rest wait for now.';
-  }
-  const action = mission.nextAction.trim().replace(/[.!]$/, '');
-  return `Maybe ${lowerFirst(action)}.`;
-}
-
 function freshness(timestamp?: number): string {
   if (!timestamp) return 'Not checked yet';
   const minutes = Math.max(0, Math.round((Date.now() - timestamp) / 60_000));
@@ -67,60 +62,31 @@ function freshness(timestamp?: number): string {
   return `Updated ${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
 }
 
-function daypart(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
-}
-
 function missionDomains(mission: Mission): string[] {
   return [...new Set(mission.representativeTabs.map((tab) => tab.domain))].slice(0, 3);
 }
 
-function describeChange(previousSession: Session | undefined, data: PreprocessedTabs, mission: Mission) {
-  if (!previousSession) {
-    return {
-      label: 'A starting point',
-      headline: 'This is the first shape Tabscope has saved.',
-      detail: 'After something meaningfully changes, this space will show what arrived and what left.',
-    };
-  }
+function formatAttention(ms: number): string {
+  const minutes = Math.max(1, Math.round(ms / 60_000));
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
+}
 
-  const previousHashes = new Set(previousSession.snapshots.map((snapshot) => snapshot.urlHash));
-  const currentHashes = new Set(data.tabs.map((tab) => tab.urlHash));
-  const addedTabs = data.tabs.filter((tab) => !previousHashes.has(tab.urlHash));
-  const removed = previousSession.snapshots.filter((snapshot) => !currentHashes.has(snapshot.urlHash)).length;
-  const missionIds = new Set(mission.evidenceTabIds);
-  const joinedMission = addedTabs.filter((tab) => missionIds.has(tab.id));
-  const newDomains = [...new Set(addedTabs.map((tab) => tab.domain).filter((domain) => domain !== 'unknown'))].slice(0, 3);
-  const comparison = freshness(previousSession.createdAt).replace('Updated', 'Compared with');
-
-  if (joinedMission.length) {
-    return {
-      label: comparison,
-      headline: `${joinedMission.length} new ${joinedMission.length === 1 ? 'tab has' : 'tabs have'} joined this thread.`,
-      detail: newDomains.length ? `The new material came from ${newDomains.join(', ')}.` : 'The thread has gathered a little more context.',
-    };
-  }
-  if (removed > addedTabs.length && removed > 0) {
-    return {
-      label: comparison,
-      headline: `You let ${removed} ${removed === 1 ? 'tab' : 'tabs'} go.`,
-      detail: addedTabs.length ? `${addedTabs.length} ${addedTabs.length === 1 ? 'new tab appeared' : 'new tabs appeared'} at the same time.` : 'The browser is carrying a little less than before.',
-    };
-  }
-  if (addedTabs.length) {
-    return {
-      label: comparison,
-      headline: `${addedTabs.length} ${addedTabs.length === 1 ? 'new tab has' : 'new tabs have'} appeared.`,
-      detail: newDomains.length ? `They came from ${newDomains.join(', ')}.` : 'They have not formed a clear new thread yet.',
-    };
-  }
+function demoAttention(data: PreprocessedTabs): AttentionLedger {
+  const now = Date.now();
+  const domains = data.clusters.slice(0, 3);
   return {
-    label: comparison,
-    headline: 'The shape of your browser has stayed steady.',
-    detail: removed ? `${removed} ${removed === 1 ? 'tab has' : 'tabs have'} quietly left.` : 'Nothing meaningful has arrived or disappeared.',
+    dateKey: new Date(now).toISOString().slice(0, 10),
+    updatedAt: now,
+    entries: domains.map((cluster, index) => ({
+      domain: cluster.domain,
+      title: cluster.sampleTitles[0] ?? cluster.domain,
+      totalMs: [38, 24, 11][index] * 60_000,
+      activations: Math.max(1, cluster.count),
+      lastSeenAt: now - index * 12 * 60_000,
+    })),
   };
 }
 
@@ -212,34 +178,6 @@ function CorrectionModal({
           {options.map((option) => <button key={option.kind} onClick={() => onSelect(option.kind)}><span>{option.title}</span><small>{option.detail}</small><ArrowRight size={16} /></button>)}
         </div>
         <p className="correction-foot">Your correction stays in Tabscope’s local storage and guides later reflections.</p>
-      </div>
-    </Modal>
-  );
-}
-
-function FocusModal({
-  open,
-  onClose,
-  mission,
-  onConfirm,
-  working,
-  message,
-}: {
-  open: boolean;
-  onClose: () => void;
-  mission?: Mission;
-  onConfirm: () => void;
-  working: boolean;
-  message?: string;
-}) {
-  return (
-    <Modal open={open} onClose={onClose} title="Focus on this thread">
-      <div className="focus-panel">
-        <span className="focus-panel-icon"><Focus size={22} /></span>
-        <h3>{mission?.title}</h3>
-        <p>Tabscope will place the tabs supporting this thread into one visible Chrome tab group. It will not close or hide anything else.</p>
-        {message && <div className="focus-message">{message}</div>}
-        <div className="focus-actions"><button className="chrome-secondary-button" onClick={onClose}>Cancel</button><button className="chrome-action-button" onClick={onConfirm} disabled={working}>{working ? 'Grouping…' : 'Create focus group'}</button></div>
       </div>
     </Modal>
   );
@@ -360,7 +298,7 @@ function CleanupReview({
   );
 }
 
-export function AnalysisView({ analysis, data, previousSession, notice, revealStep, onRefresh }: {
+export function AnalysisView({ analysis, data, notice, revealStep, onRefresh }: {
   analysis: AnalysisResult;
   data: PreprocessedTabs;
   previousSession?: Session;
@@ -372,28 +310,40 @@ export function AnalysisView({ analysis, data, previousSession, notice, revealSt
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [correctionOpen, setCorrectionOpen] = useState(false);
-  const [focusOpen, setFocusOpen] = useState(false);
-  const [focusWorking, setFocusWorking] = useState(false);
-  const [focusMessage, setFocusMessage] = useState<string>();
-  const [focusIds, setFocusIds] = useState<number[]>([]);
-  const [focusMission, setFocusMission] = useState<Mission>();
   const [missionIndex, setMissionIndex] = useState(0);
   const [correctionMessage, setCorrectionMessage] = useState<string>();
+  const [resolved, setResolved] = useState(false);
+  const [attention, setAttention] = useState<AttentionLedger>();
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [settings, setSettings] = useState<LiveReflectionSettings>(DEFAULT_LIVE_SETTINGS);
   const [status, setStatus] = useState<LiveReflectionStatus>({ state: 'idle' });
   const primaryMission = analysis.missions[missionIndex] ?? analysis.missions[0];
-  const waitingMissions = analysis.missions.filter((mission) => mission.id !== primaryMission.id).slice(0, 2);
   const looseCount = analysis.cleanup.filter((item) => item.classification === 'redundant' || item.classification === 'stale').length;
   const domains = missionDomains(primaryMission);
-  const change = describeChange(previousSession, data, primaryMission);
   const openQuestion = analysis.openLoops[0];
-  const observation = analysis.surprisingObservations[0];
+  const visibleAttention = (attention?.entries ?? []).filter((entry) => entry.totalMs >= 30_000).sort((a, b) => b.totalMs - a.totalMs).slice(0, 3);
+  const totalAttention = visibleAttention.reduce((sum, entry) => sum + entry.totalMs, 0);
+  const topAttention = visibleAttention[0];
+  const topShare = topAttention ? topAttention.totalMs / Math.max(totalAttention, 1) : 0;
+  const deservesInterruption = Boolean(topAttention && topAttention.totalMs >= 10 * 60_000 && topShare >= .4);
+  const attentionName = topAttention ? domainName(topAttention.domain) : undefined;
+  const localHeadline = deservesInterruption
+    ? topAttention!.activations >= 3 ? `${attentionName} keeps pulling you back.` : `${attentionName} became the session.`
+    : `You keep coming back to ${focusPhrase(primaryMission.title)}.`;
+  const localExplanation = topAttention
+    ? `${attentionName} has held ${formatAttention(topAttention.totalMs)} of observed active browser time today. Meanwhile, ${lowerFirst(primaryMission.title)} is still open underneath it.`
+    : `${primaryMission.tabCount} open ${primaryMission.tabCount === 1 ? 'tab points' : 'tabs point'} to this thread. Tabscope is starting to notice where your active browser time actually goes.`;
+  const useModelConscience = analysis.provider === 'llm'
+    && Boolean(attentionName)
+    && analysis.diagnosis.toLowerCase().includes(attentionName!.toLowerCase());
+  const headline = useModelConscience ? analysis.diagnosis : localHeadline;
+  const explanation = useModelConscience ? analysis.summary : localExplanation;
 
   useEffect(() => {
-    void Promise.all([loadLiveSettings(), loadLiveStatus()]).then(([nextSettings, nextStatus]) => {
+    void Promise.all([loadLiveSettings(), loadLiveStatus(), loadAttentionLedger()]).then(([nextSettings, nextStatus, nextAttention]) => {
       setSettings(nextSettings);
       setStatus(nextStatus);
+      setAttention(nextAttention ?? (!isChromeExtension() ? demoAttention(data) : undefined));
       setSettingsLoaded(true);
     });
     if (!isChromeExtension()) return;
@@ -401,12 +351,13 @@ export function AnalysisView({ analysis, data, previousSession, notice, revealSt
       if (area !== 'local') return;
       if (changes[LIVE_SETTINGS]?.newValue) setSettings({ ...DEFAULT_LIVE_SETTINGS, ...changes[LIVE_SETTINGS].newValue as LiveReflectionSettings });
       if (changes[LIVE_STATUS]?.newValue) setStatus(changes[LIVE_STATUS].newValue as LiveReflectionStatus);
+      if (changes[ATTENTION_LEDGER]?.newValue) setAttention(changes[ATTENTION_LEDGER].newValue as AttentionLedger);
     };
     chrome.storage.onChanged.addListener(onStorageChange);
     return () => chrome.storage.onChanged.removeListener(onStorageChange);
-  }, []);
+  }, [data]);
 
-  useEffect(() => { setMissionIndex(0); }, [analysis.generatedAt]);
+  useEffect(() => { setMissionIndex(0); setResolved(false); }, [analysis.generatedAt]);
 
   const updateSettings = async (patch: Partial<LiveReflectionSettings>) => {
     const next = { ...settings, ...patch };
@@ -424,114 +375,72 @@ export function AnalysisView({ analysis, data, previousSession, notice, revealSt
       kind,
     });
     setCorrectionOpen(false);
-    setCorrectionMessage(kind === 'finished' ? 'Got it — that thread is complete.' : kind === 'not-now' ? 'Got it — this can wait.' : 'Thanks — the reflection has been corrected.');
-    if (mission.id === primaryMission.id && analysis.missions.length > 1) setMissionIndex((current) => (current + 1) % analysis.missions.length);
+    setCorrectionMessage(kind === 'finished' ? 'Resolved. Tabscope will stop carrying this forward.' : kind === 'not-now' ? 'Got it — this was chosen time, not accidental drift.' : 'Thanks — the reflection has been corrected.');
+    if (kind === 'finished') setResolved(true);
+    if (kind !== 'not-now' && kind !== 'finished' && mission.id === primaryMission.id && analysis.missions.length > 1) setMissionIndex((current) => (current + 1) % analysis.missions.length);
   };
 
-  const prepareFocus = async (mission = primaryMission) => {
-    setFocusMission(mission);
-    setFocusMessage(undefined);
-    setFocusIds([]);
+  const returnToMission = async () => {
     if (!isChromeExtension()) {
-      setFocusMessage('Focus groups are available in the installed extension.');
-      setFocusOpen(true);
+      setCorrectionMessage(`Preview: this would return you to ${focusPhrase(primaryMission.title)}.`);
       return;
     }
     try {
       const current = preprocessTabs(await collectCurrentTabs());
-      const evidenceHashes = new Set(data.tabs.filter((tab) => mission.evidenceTabIds.includes(tab.id)).map((tab) => tab.urlHash));
-      const evidenceDomains = new Set(mission.representativeTabs.map((tab) => tab.domain));
-      const matching = current.tabs.filter((tab) => evidenceHashes.has(tab.urlHash) || (!evidenceHashes.size && evidenceDomains.has(tab.domain)));
-      const ids = matching.flatMap((tab) => tab.browserTabId === undefined ? [] : [tab.browserTabId]);
-      setFocusIds(ids);
-      if (!ids.length) setFocusMessage('Those tabs have changed since this reflection. Reflect again first.');
+      const evidenceHashes = new Set(data.tabs.filter((tab) => primaryMission.evidenceTabIds.includes(tab.id)).map((tab) => tab.urlHash));
+      const evidenceDomains = new Set(primaryMission.representativeTabs.map((tab) => tab.domain));
+      const target = current.tabs
+        .filter((tab) => evidenceHashes.has(tab.urlHash) || evidenceDomains.has(tab.domain))
+        .filter((tab) => tab.browserTabId !== undefined)
+        .sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))[0];
+      if (target?.browserTabId === undefined) throw new Error('That thread has changed since this reflection. Reflect again first.');
+      await activateBrowserTab(target.browserTabId);
     } catch (error) {
-      setFocusMessage(error instanceof Error ? error.message : 'The current tabs could not be matched.');
-    }
-    setFocusOpen(true);
-  };
-
-  const confirmFocus = async () => {
-    if (!focusIds.length) return;
-    const mission = focusMission ?? primaryMission;
-    setFocusWorking(true);
-    try {
-      await focusBrowserTabs(focusIds, mission.title);
-      setFocusMessage(`${focusIds.length} ${focusIds.length === 1 ? 'tab is' : 'tabs are'} now together in a focus group.`);
-    } catch (error) {
-      setFocusMessage(error instanceof Error ? error.message : 'Chrome could not create that group.');
-    } finally {
-      setFocusWorking(false);
+      setCorrectionMessage(error instanceof Error ? error.message : 'The current tabs could not be matched.');
     }
   };
 
   return (
     <main className="chrome-page">
-      <section className={`chrome-ntp memory-page reveal ${revealStep >= 0 ? 'show' : ''}`}>
-        <header className="memory-heading">
-          <span className="chrome-module-icon"><Layers3 size={20} /></span>
-          <div><h2>Your browser remembers</h2><p>{freshness(status.lastUpdatedAt ?? analysis.generatedAt)}</p></div>
-          {settingsLoaded && isChromeExtension() && <button className={`live-status-button ${settings.enabled ? 'on' : ''}`} onClick={() => setSettingsOpen(true)}><i /> {settings.enabled ? settings.pausedUntil && settings.pausedUntil > Date.now() ? 'Paused' : 'Live' : 'Live off'} <Settings2 size={15} /></button>}
+      <section className={`chrome-ntp attention-page reveal ${revealStep >= 0 ? 'show' : ''}`}>
+        <header className="attention-heading">
+          <div><strong>{freshness(status.lastUpdatedAt ?? analysis.generatedAt)}</strong><span>Observed on this device</span></div>
+          {settingsLoaded && isChromeExtension() && <button className={`live-status-button ${settings.enabled ? 'on' : ''}`} onClick={() => setSettingsOpen(true)}><i /> {settings.enabled ? 'Live' : 'Live off'} <Settings2 size={15} /></button>}
         </header>
 
-        <div className="memory-hero-grid">
-          <article className="memory-hero">
-            <span className="memory-kicker">{daypart()}</span>
-            <h1>You’re in the middle of <strong>{focusPhrase(primaryMission.title)}</strong>.</h1>
-            <p className="memory-evidence">{primaryMission.tabCount} open {primaryMission.tabCount === 1 ? 'tab appears' : 'tabs appear'} connected{domains.length ? ` across ${domains.join(', ')}` : ''}.</p>
-            <div className="memory-restart"><small>A useful place to restart</small><p>{gentleNextStep(primaryMission)}</p></div>
-            <div className="memory-primary-actions">
-              <button className="chrome-action-button" onClick={() => void prepareFocus(primaryMission)}><Focus size={15} /> Continue this thread</button>
-              <button className="chrome-text-button" onClick={() => void recordCorrection('finished', primaryMission)}>I’m done with this</button>
-            </div>
-          </article>
+        <article className="attention-hero">
+          <p>{deservesInterruption ? 'A pattern worth interrupting' : 'A pattern worth noticing'}</p>
+          <h1>{headline}</h1>
+          <div>{explanation}</div>
+          <div className="attention-actions">
+            <button className="chrome-action-button" onClick={() => void returnToMission()}>Return to {domains[0] ? domainName(domains[0]) : 'this thread'}</button>
+            <button className="chrome-secondary-button" onClick={() => void recordCorrection('not-now', primaryMission)}>This was intentional</button>
+          </div>
+          {correctionMessage && <div className="attention-response"><Check size={15} /> {correctionMessage}</div>}
+        </article>
 
-          <aside className="memory-change-card">
-            <span className="memory-change-icon"><History size={18} /></span>
-            <small>{change.label}</small>
-            <h3>{change.headline}</h3>
-            <p>{change.detail}</p>
-          </aside>
-        </div>
-
-        {settingsLoaded && isChromeExtension() && !settings.promptDismissed && <div className="live-prompt">
-          <div><strong>Let Tabscope remember what changes?</strong><p>It can check locally every 10 minutes and only update when the shape of your tabs meaningfully shifts.</p></div>
-          <div><button className="chrome-secondary-button" onClick={() => void updateSettings({ promptDismissed: true })}>Not now</button><button className="chrome-action-button" onClick={() => void updateSettings({ enabled: true, intervalMinutes: 10, modelMode: 'adaptive', promptDismissed: true })}>Keep it current</button></div>
-        </div>}
-
-        {correctionMessage && <div className="inline-success"><Check size={15} /> {correctionMessage}</div>}
-
-        <div className="memory-lower-grid">
-          <section className="memory-section">
-            <div className="memory-section-heading"><div><h2>Waiting for you</h2><p>Other threads Tabscope can hold without putting them in your way.</p></div></div>
-            <div className="memory-thread-list">
-              {waitingMissions.length ? waitingMissions.map((mission) => (
-                <button className="memory-thread" key={mission.id} onClick={() => void prepareFocus(mission)}>
-                  <span><strong>{mission.title}</strong><small>{mission.tabCount} {mission.tabCount === 1 ? 'tab' : 'tabs'} · {missionDomains(mission).slice(0, 2).join(', ') || 'mixed sources'}</small></span>
-                  <ArrowRight size={16} />
-                </button>
-              )) : <div className="memory-empty"><strong>Nothing else is asking for attention.</strong><p>One clear thread is enough.</p></div>}
-            </div>
+        <div className="attention-lower">
+          <section className="attention-time">
+            <p>{visibleAttention.length ? `Where the last ${formatAttention(totalAttention)} went` : 'Where your active browser time will appear'}</p>
+            {visibleAttention.length ? <>
+              <div className="attention-bar">{visibleAttention.map((entry, index) => <i className={`attention-segment segment-${index + 1}`} key={entry.domain} style={{ width: `${(entry.totalMs / totalAttention) * 100}%` }} />)}</div>
+              <div className="attention-legend">{visibleAttention.map((entry, index) => <span className={`legend-${index + 1}`} key={entry.domain}>{domainName(entry.domain)} · {formatAttention(entry.totalMs)}</span>)}</div>
+            </> : <div className="attention-empty">Timing begins quietly as you move between normal web tabs.</div>}
           </section>
 
-          <section className="memory-section">
-            <div className="memory-section-heading"><div><h2>Ready to release</h2><p>Things that may have already done their job.</p></div></div>
-            <div className="memory-release-card">
-              <strong>{looseCount ? `${looseCount} ${looseCount === 1 ? 'tab looks' : 'tabs look'} ready for a decision` : 'Nothing needs clearing right now'}</strong>
-              <p>{looseCount ? 'Tabscope will show its reasoning. You still choose every tab.' : 'The open tabs still appear connected or intentionally kept.'}</p>
-              {looseCount > 0 && <button className="chrome-secondary-button" onClick={() => setCleanupOpen(true)}>Review tabs</button>}
+          <section className="attention-loop">
+            <p>Still unresolved</p>
+            <div className={resolved ? 'resolved' : ''}>
+              <strong>{resolved ? 'Resolved just now.' : openQuestion?.title ?? `What would make “${primaryMission.title}” resolved?`}</strong>
+              <span>{resolved ? 'Tabscope will stop carrying this question into later reflections.' : openQuestion?.description ?? `${primaryMission.tabCount} related tabs are still open.`}</span>
+              {!resolved && <button onClick={() => void recordCorrection('finished', primaryMission)}>Mark this resolved</button>}
             </div>
           </section>
         </div>
 
-        {(openQuestion || observation) && <aside className="memory-connection">
-          <span><Sparkles size={17} /></span>
-          <div><small>{openQuestion ? 'One question still open' : 'A connection worth noticing'}</small><strong>{openQuestion?.title ?? observation.text}</strong>{openQuestion && <p>{openQuestion.description}</p>}</div>
-        </aside>}
-
-        <footer className="memory-footer">
-          <div><button className="chrome-text-button" onClick={() => setDetailsOpen(true)}>Why this reflection?</button><button className="chrome-text-button" onClick={() => setCorrectionOpen(true)}>Not quite</button></div>
-          <span>{notice ?? 'A suggestion, not a verdict'} · Tabscope never reads page contents</span>
+        <footer className="attention-footer">
+          <div><button onClick={() => setDetailsOpen(true)}>Why this?</button><button onClick={() => setCorrectionOpen(true)}>Not quite</button>{looseCount > 0 && <button onClick={() => setCleanupOpen(true)}>Review {looseCount} tabs</button>}</div>
+          <span>{notice ?? 'Active-tab time stays on this device'} · Tabscope never reads page contents</span>
         </footer>
       </section>
 
@@ -539,7 +448,6 @@ export function AnalysisView({ analysis, data, previousSession, notice, revealSt
       <CleanupReview open={cleanupOpen} onClose={() => setCleanupOpen(false)} analysis={analysis} data={data} />
       <LiveSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} status={status} onChange={updateSettings} onRefresh={onRefresh} />
       <CorrectionModal open={correctionOpen} onClose={() => setCorrectionOpen(false)} mission={primaryMission} onSelect={(kind) => void recordCorrection(kind, primaryMission)} />
-      <FocusModal open={focusOpen} onClose={() => setFocusOpen(false)} mission={focusMission ?? primaryMission} onConfirm={() => void confirmFocus()} working={focusWorking} message={focusMessage} />
     </main>
   );
 }

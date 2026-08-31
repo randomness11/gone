@@ -1,14 +1,18 @@
 import { analyzeTabs } from '../lib/analysis';
+import { transitionAttention } from '../lib/attention';
 import { buildSnapshotDigest, compareSnapshotDigests, shouldRefreshModel } from '../lib/live';
 import { buildLocalAnalysis } from '../lib/localAnalysis';
 import { preprocessTabs } from '../lib/preprocessing';
+import { redactText, sanitizeUrl } from '../lib/privacy';
 import {
   ensureLiveReflectionAutostart,
+  loadAttentionLedger,
   loadCurrentSession,
   loadLiveStatus,
   loadReflectionFeedback,
   loadSnapshotDigest,
   saveLiveStatus,
+  saveAttentionLedger,
   saveSession,
   saveSnapshotDigest,
 } from '../lib/storage';
@@ -18,6 +22,49 @@ import type { PreprocessedTabs } from '../types';
 const DASHBOARD_PATH = 'dashboard.html';
 const LIVE_ALARM = 'tabscope.live-reflection';
 const RETIRED_ATTENTION_ALARM = 'tabscope.attention-cycle';
+const ATTENTION_ALARM = 'tabscope.attention-checkpoint';
+
+let attentionQueue = Promise.resolve();
+
+function queueAttention(work: () => Promise<void>): void {
+  attentionQueue = attentionQueue.then(work, work).catch(() => undefined);
+}
+
+async function recordAttention(tab?: chrome.tabs.Tab): Promise<void> {
+  const now = Date.now();
+  const ledger = await loadAttentionLedger();
+  if (!tab?.id || tab.windowId === chrome.windows.WINDOW_ID_NONE) {
+    await saveAttentionLedger(transitionAttention(ledger, undefined, now));
+    return;
+  }
+  const sanitized = sanitizeUrl(tab.url);
+  const extensionOrigin = chrome.runtime.getURL('');
+  const eligible = !sanitized.unsupported && !tab.url?.startsWith(extensionOrigin);
+  await saveAttentionLedger(transitionAttention(ledger, eligible ? {
+    tabId: tab.id,
+    windowId: tab.windowId,
+    domain: sanitized.domain,
+    title: redactText(tab.title || sanitized.domain),
+  } : undefined, now));
+}
+
+async function checkpointAttention(): Promise<void> {
+  const permission = await hasTabsPermission();
+  if (!permission) {
+    const ledger = await loadAttentionLedger();
+    if (ledger?.active) await saveAttentionLedger(transitionAttention(ledger, undefined));
+    return;
+  }
+  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  await recordAttention(tab);
+}
+
+async function syncAttentionAlarm(): Promise<void> {
+  const existing = await chrome.alarms.get(ATTENTION_ALARM);
+  if (!existing || existing.periodInMinutes !== 1) {
+    await chrome.alarms.create(ATTENTION_ALARM, { delayInMinutes: 1, periodInMinutes: 1 });
+  }
+}
 
 async function syncLiveAlarm(): Promise<void> {
   await chrome.alarms.clear(RETIRED_ATTENTION_ALARM);
@@ -85,12 +132,12 @@ async function refreshLiveReflection(force = false, suppliedData?: PreprocessedT
 
     const useModel = force || (settings.modelMode === 'adaptive'
       && (shouldRefreshModel(status.lastModelAt, change, now) || retryAfterFailure));
-    const feedback = await loadReflectionFeedback();
+    const [feedback, attention] = await Promise.all([loadReflectionFeedback(), loadAttentionLedger()]);
     let analysis;
     let modelError: string | undefined;
     if (useModel) {
       try {
-        analysis = await analyzeTabs(data, false, feedback);
+        analysis = await analyzeTabs(data, false, feedback, attention);
       } catch (error) {
         modelError = error instanceof Error ? error.message : 'The model refresh failed.';
         analysis = buildLocalAnalysis(data);
@@ -119,15 +166,52 @@ async function refreshLiveReflection(force = false, suppliedData?: PreprocessedT
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   void syncLiveAlarm();
+  void syncAttentionAlarm();
+  queueAttention(checkpointAttention);
   if (reason === 'install') void chrome.tabs.create({ url: chrome.runtime.getURL(DASHBOARD_PATH) });
 });
 
 chrome.runtime.onStartup.addListener(() => {
   void syncLiveAlarm();
+  void syncAttentionAlarm();
+  queueAttention(async () => {
+    const ledger = await loadAttentionLedger();
+    await saveAttentionLedger(transitionAttention(ledger, undefined));
+    await checkpointAttention();
+  });
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === LIVE_ALARM) void refreshLiveReflection();
+  if (alarm.name === ATTENTION_ALARM) queueAttention(checkpointAttention);
+});
+
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  queueAttention(async () => recordAttention(await chrome.tabs.get(tabId)));
+});
+
+chrome.tabs.onUpdated.addListener((_tabId, change, tab) => {
+  if (tab.active && (change.url !== undefined || change.title !== undefined)) {
+    queueAttention(async () => recordAttention(tab));
+  }
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  queueAttention(async () => {
+    const ledger = await loadAttentionLedger();
+    if (ledger?.active?.tabId === tabId) await saveAttentionLedger(transitionAttention(ledger, undefined));
+  });
+});
+
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  queueAttention(async () => {
+    if (windowId === chrome.windows.WINDOW_ID_NONE) {
+      await recordAttention(undefined);
+      return;
+    }
+    const [tab] = await chrome.tabs.query({ active: true, windowId });
+    await recordAttention(tab);
+  });
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
@@ -155,3 +239,5 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
 });
 
 void syncLiveAlarm();
+void syncAttentionAlarm();
+queueAttention(checkpointAttention);

@@ -198,3 +198,26 @@ export interface AttentionEvent {
   tabSnapshotId?: string;
   entityId?: string;
 }
+
+export interface AttentionEntry {
+  domain: string;
+  title: string;
+  totalMs: number;
+  activations: number;
+  lastSeenAt: number;
+}
+
+export interface ActiveAttentionSample {
+  tabId: number;
+  windowId: number;
+  domain: string;
+  title: string;
+  startedAt: number;
+}
+
+export interface AttentionLedger {
+  dateKey: string;
+  updatedAt: number;
+  entries: AttentionEntry[];
+  active?: ActiveAttentionSample;
+}

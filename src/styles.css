@@ -326,3 +326,61 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
   .memory-footer { align-items: flex-start; flex-direction: column; gap: 6px; padding-top: 8px; }
   .memory-footer > span { text-align: left; }
 }
+
+/* Attention conscience new-tab surface */
+.attention-page { width: min(860px, calc(100% - 48px)); padding: 42px 0 72px; justify-content: center; }
+.attention-heading { min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.attention-heading > div { display: flex; align-items: baseline; gap: 9px; }
+.attention-heading strong { color: var(--chrome-text); font-size: 11px; line-height: 17px; font-weight: 500; }
+.attention-heading span { color: var(--chrome-tertiary); font-size: 10px; line-height: 16px; }
+.attention-heading .live-status-button { margin-left: 0; }
+.attention-hero { padding: clamp(50px, 8vh, 86px) 0 46px; }
+.attention-hero > p { margin: 0 0 17px; color: var(--chrome-blue); font-size: 12px; line-height: 18px; font-weight: 500; }
+.attention-hero h1 { max-width: 820px; margin: 0; color: var(--chrome-text); font-size: clamp(42px, 5.3vw, 62px); line-height: 1.08; font-weight: 400; letter-spacing: -.035em; text-wrap: balance; }
+.attention-hero > div:not(.attention-actions):not(.attention-response) { max-width: 700px; margin-top: 22px; color: var(--chrome-secondary); font-size: 16px; line-height: 26px; text-wrap: balance; }
+.attention-actions { min-height: 66px; margin-top: 26px; display: flex; align-items: center; gap: 9px; }
+.attention-actions .chrome-action-button, .attention-actions .chrome-secondary-button { height: 38px; border-radius: 19px; padding-inline: 18px; }
+.attention-response { width: fit-content; margin-top: 2px; padding: 8px 11px; border-radius: 6px; background: #e6f4ea; color: #137333; display: flex; align-items: center; gap: 7px; font-size: 11px; line-height: 17px; }
+.attention-lower { padding: 28px 0 30px; display: grid; grid-template-columns: 1.12fr .88fr; gap: 56px; border-top: 1px solid var(--chrome-border); border-bottom: 1px solid var(--chrome-border); }
+.attention-time > p, .attention-loop > p { margin: 0 0 13px; color: var(--chrome-secondary); font-size: 11px; line-height: 17px; font-weight: 500; }
+.attention-bar { height: 8px; margin-bottom: 14px; overflow: hidden; display: flex; border-radius: 4px; background: var(--chrome-surface); }
+.attention-segment { height: 100%; display: block; }
+.attention-segment.segment-1 { background: var(--chrome-blue); }
+.attention-segment.segment-2 { background: #f28b82; }
+.attention-segment.segment-3 { background: #fdd663; }
+.attention-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--chrome-secondary); font-size: 10px; line-height: 16px; }
+.attention-legend span::before { content: ''; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--chrome-blue); display: inline-block; }
+.attention-legend .legend-2::before { background: #f28b82; }
+.attention-legend .legend-3::before { background: #fdd663; }
+.attention-empty { color: var(--chrome-tertiary); font-size: 11px; line-height: 18px; }
+.attention-loop > div { padding-left: 17px; border-left: 2px solid var(--chrome-blue); }
+.attention-loop > div.resolved { border-color: #34a853; }
+.attention-loop strong { display: block; color: var(--chrome-text); font-size: 13px; line-height: 20px; font-weight: 500; }
+.attention-loop span { display: block; margin-top: 5px; color: var(--chrome-secondary); font-size: 10px; line-height: 16px; }
+.attention-loop button { height: 25px; margin: 8px 0 0; padding: 0; border: 0; background: transparent; color: var(--chrome-blue); cursor: pointer; font-size: 10px; line-height: 16px; font-weight: 500; }
+.attention-loop button:hover { text-decoration: underline; }
+.attention-footer { min-height: 45px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; color: var(--chrome-tertiary); font-size: 9px; line-height: 15px; }
+.attention-footer > div { display: flex; gap: 2px; }
+.attention-footer button { height: 28px; padding: 0 7px; border: 0; border-radius: 14px; background: transparent; color: var(--chrome-secondary); cursor: pointer; font-size: 10px; line-height: 16px; font-weight: 500; }
+.attention-footer button:hover { background: rgba(60, 64, 67, .08); color: var(--chrome-text); }
+.attention-footer > span { text-align: right; }
+
+@media (max-width: 700px) {
+  .attention-page { width: calc(100% - 36px); padding: 24px 0 64px; justify-content: flex-start; }
+  .attention-hero { padding: 44px 0 36px; }
+  .attention-hero h1 { font-size: 39px; }
+  .attention-hero > div:not(.attention-actions):not(.attention-response) { font-size: 14px; line-height: 23px; }
+  .attention-lower { grid-template-columns: 1fr; gap: 30px; }
+  .attention-footer { align-items: flex-start; flex-direction: column; gap: 4px; padding-top: 10px; }
+  .attention-footer > span { text-align: left; }
+}
+
+@media (max-width: 480px) {
+  .attention-heading > div { align-items: flex-start; flex-direction: column; gap: 0; }
+  .attention-actions { align-items: stretch; flex-direction: column; }
+  .attention-actions button { width: 100%; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .attention-response { background: #1e3a2a; color: #81c995; }
+}

@@ -49,6 +49,12 @@ export async function closeTabsByBrowserId(ids: number[]): Promise<void> {
   await chrome.tabs.remove(ids);
 }
 
+export async function activateBrowserTab(id: number): Promise<void> {
+  if (!isChromeExtension()) return;
+  const tab = await chrome.tabs.update(id, { active: true });
+  if (tab.windowId !== undefined) await chrome.windows.update(tab.windowId, { focused: true });
+}
+
 export async function focusBrowserTabs(ids: number[], title: string): Promise<number | undefined> {
   if (!isChromeExtension() || ids.length === 0) return undefined;
   const granted = await chrome.permissions.request({ permissions: ['tabs', 'tabGroups'] });

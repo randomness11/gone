@@ -1,4 +1,4 @@
-import type { AnalysisResult, PreprocessedTabs, ReflectionFeedback } from '../types';
+import type { AnalysisResult, AttentionLedger, PreprocessedTabs, ReflectionFeedback } from '../types';
 import { compactTabsForModel } from './preprocessing';
 import { parseAnalysisResponse } from './validation';
 
@@ -8,19 +8,21 @@ export interface LlmConfig {
   model: string;
 }
 
-export const ANALYSIS_SYSTEM_PROMPT = `You are the reflection engine for Tabscope. Open browser tabs can offer clues about what a person is carrying right now.
+export const ANALYSIS_SYSTEM_PROMPT = `You are the browser conscience inside Tabscope. You appear for one moment when the user opens a new tab.
 
-Your job is not to summarize or make broad topic categories. Notice the user's concrete goals, recurring themes, unresolved questions, attention momentum, and tabs that may no longer be useful. A mission should sound like a human goal: "Comparing AI infrastructure companies," not "Technology research."
+Your job is to notice the single most timely, concrete thing in the user's observed active-tab time and open tabs: where attention actually went, what keeps pulling them back, and what unfinished decision may still be underneath it. Do not produce a dashboard in prose. Create one small moment of recognition, then preserve structured missions and evidence for the product.
 
 Rules:
-- Write like a perceptive, kind friend reflecting something back—not an analyst, therapist, productivity coach, or judge.
+- Write like a perceptive, slightly cheeky friend—not an analyst, therapist, productivity coach, or judge.
 - Describe this moment, never the person's identity. Use provisional language such as "seems," "might," and "may" whenever intent is inferred.
 - Make the user feel specifically seen without making them feel watched. Warmth and restraint matter more than cleverness.
 - Avoid loaded words in user-facing copy: obsessed, scattered, distracted, cluttered, dead, low-value, failing, procrastinating, or uncomfortable.
-- diagnosis must be one warm, specific reflection in plain second-person language. It should invite recognition, not announce a verdict.
-- nextAction should be one gentle, concrete invitation that takes under five minutes. Do not scold, command, or prescribe.
+- diagnosis is the large new-tab headline. Keep it under 12 words. When attention evidence exists, name the concrete domain or behavior. It should feel like a timely nudge, not a report.
+- summary is the one-sentence evidence underneath the headline. Use exact observed minutes, revisits, tab counts, or named sources when supplied. Never call observed time productive, wasted, focused, or distracted.
+- nextAction should help the user return to, intentionally leave, or resolve a thread. Do not scold, command, or prescribe.
 - When user corrections are supplied, treat them as authoritative. Do not revive a finished/not-now mission as the primary mission unless strong new evidence appears.
-- Every major inference must be defensible from the provided tab IDs. Never invent activity, history, identity, or motivation.
+- Every major inference must be defensible from the provided tab IDs or aggregated attention domains. Never invent activity, history, identity, or motivation.
+- Observed active-tab minutes are local measurements, not proof of continuous reading or intent. Say "observed browser time" when precision matters.
 - Prefer specific quantities and named entities when supported.
 - Avoid vague horoscope language such as "exploring various topics," "interested in technology," or "you appear curious."
 - Infer 2–7 missions when evidence allows. Use fewer for small inputs.
@@ -202,12 +204,21 @@ export function validateAnalysisAgainstSnapshot(analysis: AnalysisResult, data: 
   };
 }
 
-export async function analyzeWithLlm(data: PreprocessedTabs, config: LlmConfig, feedback: ReflectionFeedback[] = []): Promise<AnalysisResult> {
+export async function analyzeWithLlm(data: PreprocessedTabs, config: LlmConfig, feedback: ReflectionFeedback[] = [], attention?: AttentionLedger): Promise<AnalysisResult> {
   const compact = JSON.stringify(compactTabsForModel(data));
+  const compactAttention = attention ? JSON.stringify({
+    observedMinutes: Math.round(attention.entries.reduce((sum, entry) => sum + entry.totalMs, 0) / 60_000),
+    domains: attention.entries.filter((entry) => entry.totalMs >= 30_000).slice(0, 8).map((entry) => ({
+      domain: entry.domain,
+      observedMinutes: Math.round(entry.totalMs / 60_000),
+      revisits: entry.activations,
+      lastSeenMinutesAgo: Math.max(0, Math.round((Date.now() - entry.lastSeenAt) / 60_000)),
+    })),
+  }) : undefined;
   const corrections = feedback.slice(-12).map(({ kind, missionTitle }) => ({ kind, missionTitle }));
   const messages = [
     { role: 'system' as const, content: ANALYSIS_SYSTEM_PROMPT },
-    { role: 'user' as const, content: `Analyze this sanitized current-tab snapshot. No page content or query parameters are included.\n${compact}${corrections.length ? `\nUser corrections from earlier reflections (honor these unless the new evidence clearly changed):\n${JSON.stringify(corrections)}` : ''}` },
+    { role: 'user' as const, content: `Analyze this sanitized current-tab snapshot. No page content or query parameters are included.\n${compact}${compactAttention ? `\nLocally observed active-tab time today (aggregated before sending):\n${compactAttention}` : ''}${corrections.length ? `\nUser corrections from earlier reflections (honor these unless the new evidence clearly changed):\n${JSON.stringify(corrections)}` : ''}` },
   ];
 
   const deadline = Date.now() + MODEL_ANALYSIS_TIMEOUT_MS;
