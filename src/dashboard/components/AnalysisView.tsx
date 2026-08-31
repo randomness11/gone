@@ -2,6 +2,7 @@ import { ArrowRight, Check, Clock3, Pause, RefreshCcw, Settings2, Trash2, X } fr
 import { useEffect, useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { preprocessTabs } from '../../lib/preprocessing';
+import { attentionDateKey } from '../../lib/attention';
 import {
   clearTabscopeMemory,
   ATTENTION_LEDGER,
@@ -11,12 +12,15 @@ import {
   loadLiveSettings,
   loadLiveStatus,
   loadAttentionLedger,
+  loadAttentionAcknowledgement,
   saveLiveSettings,
+  saveAttentionAcknowledgement,
   saveReflectionFeedback,
 } from '../../lib/storage';
 import { activateBrowserTab, closeTabsByBrowserId, collectCurrentTabs, isChromeExtension } from '../../lib/tabs';
 import type {
   AnalysisResult,
+  AttentionAcknowledgement,
   AttentionLedger,
   CleanupClass,
   FeedbackKind,
@@ -314,36 +318,37 @@ export function AnalysisView({ analysis, data, notice, revealStep, onRefresh }: 
   const [correctionMessage, setCorrectionMessage] = useState<string>();
   const [resolved, setResolved] = useState(false);
   const [attention, setAttention] = useState<AttentionLedger>();
+  const [acknowledgement, setAcknowledgement] = useState<AttentionAcknowledgement>();
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [settings, setSettings] = useState<LiveReflectionSettings>(DEFAULT_LIVE_SETTINGS);
   const [status, setStatus] = useState<LiveReflectionStatus>({ state: 'idle' });
-  const primaryMission = analysis.missions[missionIndex] ?? analysis.missions[0];
+  const leadingMission = analysis.missions[missionIndex] ?? analysis.missions[0];
   const looseCount = analysis.cleanup.filter((item) => item.classification === 'redundant' || item.classification === 'stale').length;
-  const domains = missionDomains(primaryMission);
-  const openQuestion = analysis.openLoops[0];
   const visibleAttention = (attention?.entries ?? []).filter((entry) => entry.totalMs >= 30_000).sort((a, b) => b.totalMs - a.totalMs).slice(0, 3);
   const totalAttention = visibleAttention.reduce((sum, entry) => sum + entry.totalMs, 0);
-  const topAttention = visibleAttention[0];
-  const topShare = topAttention ? topAttention.totalMs / Math.max(totalAttention, 1) : 0;
-  const deservesInterruption = Boolean(topAttention && topAttention.totalMs >= 10 * 60_000 && topShare >= .4);
+  const acknowledgedToday = acknowledgement?.dateKey === attentionDateKey() ? new Set(acknowledgement.domains) : new Set<string>();
+  const topAttention = visibleAttention.find((entry) => !acknowledgedToday.has(entry.domain)) ?? visibleAttention[0];
+  const hasEarnedInsight = totalAttention >= 10 * 60_000 && Boolean(topAttention);
   const attentionName = topAttention ? domainName(topAttention.domain) : undefined;
-  const localHeadline = deservesInterruption
-    ? topAttention!.activations >= 3 ? `${attentionName} keeps pulling you back.` : `${attentionName} became the session.`
-    : `You keep coming back to ${focusPhrase(primaryMission.title)}.`;
-  const localExplanation = topAttention
-    ? `${attentionName} has held ${formatAttention(topAttention.totalMs)} of observed active browser time today. Meanwhile, ${lowerFirst(primaryMission.title)} is still open underneath it.`
-    : `${primaryMission.tabCount} open ${primaryMission.tabCount === 1 ? 'tab points' : 'tabs point'} to this thread. Tabscope is starting to notice where your active browser time actually goes.`;
-  const useModelConscience = analysis.provider === 'llm'
-    && Boolean(attentionName)
-    && analysis.diagnosis.toLowerCase().includes(attentionName!.toLowerCase());
-  const headline = useModelConscience ? analysis.diagnosis : localHeadline;
-  const explanation = useModelConscience ? analysis.summary : localExplanation;
+  const distinctMission = topAttention
+    ? analysis.missions.find((mission) => !missionDomains(mission).includes(topAttention.domain))
+    : undefined;
+  const primaryMission = distinctMission ?? leadingMission;
+  const missionEvidence = new Set(primaryMission.evidenceTabIds);
+  const openQuestion = analysis.openLoops.find((loop) => loop.evidenceTabIds.some((id) => missionEvidence.has(id)));
+  const headline = topAttention?.activations && topAttention.activations >= 3
+    ? `${attentionName} has brought you back ${topAttention.activations} times today.`
+    : `${attentionName} held most of this session.`;
+  const explanation = topAttention
+    ? `${attentionName} held ${formatAttention(topAttention.totalMs)} of observed browser time. ${primaryMission.title} remains open across ${primaryMission.tabCount} ${primaryMission.tabCount === 1 ? 'tab' : 'tabs'}.`
+    : '';
 
   useEffect(() => {
-    void Promise.all([loadLiveSettings(), loadLiveStatus(), loadAttentionLedger()]).then(([nextSettings, nextStatus, nextAttention]) => {
+    void Promise.all([loadLiveSettings(), loadLiveStatus(), loadAttentionLedger(), loadAttentionAcknowledgement()]).then(([nextSettings, nextStatus, nextAttention, nextAcknowledgement]) => {
       setSettings(nextSettings);
       setStatus(nextStatus);
       setAttention(nextAttention ?? (!isChromeExtension() ? demoAttention(data) : undefined));
+      setAcknowledgement(nextAcknowledgement);
       setSettingsLoaded(true);
     });
     if (!isChromeExtension()) return;
@@ -400,26 +405,42 @@ export function AnalysisView({ analysis, data, notice, revealStep, onRefresh }: 
     }
   };
 
+  const markIntentional = async () => {
+    if (!topAttention) return;
+    const dateKey = attentionDateKey();
+    const currentDomains = acknowledgement?.dateKey === dateKey ? acknowledgement.domains : [];
+    const next = { dateKey, domains: [...new Set([...currentDomains, topAttention.domain])] };
+    await saveAttentionAcknowledgement(next);
+    setCorrectionMessage(`${attentionName} marked as intentional for today.`);
+  };
+
   return (
     <main className="chrome-page">
-      <section className={`chrome-ntp attention-page reveal ${revealStep >= 0 ? 'show' : ''}`}>
+      <section className={`chrome-ntp attention-page ${hasEarnedInsight ? '' : 'attention-cold'} reveal ${revealStep >= 0 ? 'show' : ''}`}>
         <header className="attention-heading">
-          <div><strong>{freshness(status.lastUpdatedAt ?? analysis.generatedAt)}</strong><span>Observed on this device</span></div>
+          <div><strong>{totalAttention ? `${formatAttention(totalAttention)} observed today` : 'Waiting for a pattern'}</strong><span>On this device</span></div>
           {settingsLoaded && isChromeExtension() && <button className={`live-status-button ${settings.enabled ? 'on' : ''}`} onClick={() => setSettingsOpen(true)}><i /> {settings.enabled ? 'Live' : 'Live off'} <Settings2 size={15} /></button>}
         </header>
 
         <article className="attention-hero">
-          <p>{deservesInterruption ? 'A pattern worth interrupting' : 'A pattern worth noticing'}</p>
-          <h1>{headline}</h1>
-          <div>{explanation}</div>
-          <div className="attention-actions">
-            <button className="chrome-action-button" onClick={() => void returnToMission()}>Return to {domains[0] ? domainName(domains[0]) : 'this thread'}</button>
-            <button className="chrome-secondary-button" onClick={() => void recordCorrection('not-now', primaryMission)}>This was intentional</button>
-          </div>
-          {correctionMessage && <div className="attention-response"><Check size={15} /> {correctionMessage}</div>}
+          {hasEarnedInsight ? <>
+            <p>A pattern worth interrupting</p>
+            <h1>{headline}</h1>
+            <div>{explanation}</div>
+            <div className="attention-actions">
+              <button className="chrome-action-button" onClick={() => void returnToMission()}>Return to this thread</button>
+              <button className="chrome-secondary-button" onClick={() => void markIntentional()}>This was intentional</button>
+            </div>
+            {correctionMessage && <div className="attention-response"><Check size={15} /> {correctionMessage}</div>}
+          </> : <>
+            <p>Nothing worth interrupting yet</p>
+            <h1>Go browse. I’ll notice what keeps pulling you back.</h1>
+            <div>Tabscope needs about ten minutes of observed browser time before it has anything honest to say.</div>
+            <small className="attention-cold-progress">{totalAttention ? `${formatAttention(totalAttention)} observed so far` : 'Timing starts when you move through normal web tabs'}</small>
+          </>}
         </article>
 
-        <div className="attention-lower">
+        {hasEarnedInsight && <div className={`attention-lower ${openQuestion ? '' : 'attention-lower-single'}`}>
           <section className="attention-time">
             <p>{visibleAttention.length ? `Where the last ${formatAttention(totalAttention)} went` : 'Where your active browser time will appear'}</p>
             {visibleAttention.length ? <>
@@ -428,18 +449,18 @@ export function AnalysisView({ analysis, data, notice, revealStep, onRefresh }: 
             </> : <div className="attention-empty">Timing begins quietly as you move between normal web tabs.</div>}
           </section>
 
-          <section className="attention-loop">
+          {openQuestion && <section className="attention-loop">
             <p>Still unresolved</p>
             <div className={resolved ? 'resolved' : ''}>
-              <strong>{resolved ? 'Resolved just now.' : openQuestion?.title ?? `What would make “${primaryMission.title}” resolved?`}</strong>
-              <span>{resolved ? 'Tabscope will stop carrying this question into later reflections.' : openQuestion?.description ?? `${primaryMission.tabCount} related tabs are still open.`}</span>
+              <strong>{resolved ? 'Resolved just now.' : openQuestion.title}</strong>
+              <span>{resolved ? 'Tabscope will stop carrying this question into later reflections.' : openQuestion.description}</span>
               {!resolved && <button onClick={() => void recordCorrection('finished', primaryMission)}>Mark this resolved</button>}
             </div>
-          </section>
-        </div>
+          </section>}
+        </div>}
 
         <footer className="attention-footer">
-          <div><button onClick={() => setDetailsOpen(true)}>Why this?</button><button onClick={() => setCorrectionOpen(true)}>Not quite</button>{looseCount > 0 && <button onClick={() => setCleanupOpen(true)}>Review {looseCount} tabs</button>}</div>
+          <div>{hasEarnedInsight && <><button onClick={() => setDetailsOpen(true)}>Why this?</button><button onClick={() => setCorrectionOpen(true)}>Not quite</button>{looseCount > 0 && <button onClick={() => setCleanupOpen(true)}>Review {looseCount} tabs</button>}</>}</div>
           <span>{notice ?? 'Active-tab time stays on this device'} · Tabscope never reads page contents</span>
         </footer>
       </section>

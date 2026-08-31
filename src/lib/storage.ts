@@ -1,5 +1,6 @@
 import type {
   AnalysisResult,
+  AttentionAcknowledgement,
   AttentionLedger,
   LiveReflectionSettings,
   LiveReflectionStatus,
@@ -18,6 +19,7 @@ export const SNAPSHOT_DIGEST = 'tabscope.snapshotDigest';
 export const REFLECTION_FEEDBACK = 'tabscope.reflectionFeedback';
 export const LIVE_AUTOSTART_MIGRATION = 'tabscope.liveAutostart.v1';
 export const ATTENTION_LEDGER = 'tabscope.attentionLedger.v1';
+export const ATTENTION_ACKNOWLEDGEMENT = 'tabscope.attentionAcknowledgement.v1';
 
 export const DEFAULT_LIVE_SETTINGS: LiveReflectionSettings = {
   enabled: true,
@@ -144,8 +146,16 @@ export async function saveAttentionLedger(ledger: AttentionLedger): Promise<void
   await writeValue(ATTENTION_LEDGER, ledger);
 }
 
+export async function loadAttentionAcknowledgement(): Promise<AttentionAcknowledgement | undefined> {
+  return readValue<AttentionAcknowledgement>(ATTENTION_ACKNOWLEDGEMENT);
+}
+
+export async function saveAttentionAcknowledgement(value: AttentionAcknowledgement): Promise<void> {
+  await writeValue(ATTENTION_ACKNOWLEDGEMENT, value);
+}
+
 export async function clearTabscopeMemory(): Promise<void> {
-  const keys = [CURRENT_SESSION, PREVIOUS_SESSION, LIVE_STATUS, SNAPSHOT_DIGEST, REFLECTION_FEEDBACK, ATTENTION_LEDGER];
+  const keys = [CURRENT_SESSION, PREVIOUS_SESSION, LIVE_STATUS, SNAPSHOT_DIGEST, REFLECTION_FEEDBACK, ATTENTION_LEDGER, ATTENTION_ACKNOWLEDGEMENT];
   if (isChromeExtension()) await chrome.storage.local.remove(keys);
   else keys.forEach((key) => localStorage.removeItem(key));
 }

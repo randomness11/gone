@@ -338,10 +338,14 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
 .attention-hero > p { margin: 0 0 17px; color: var(--chrome-blue); font-size: 12px; line-height: 18px; font-weight: 500; }
 .attention-hero h1 { max-width: 820px; margin: 0; color: var(--chrome-text); font-size: clamp(42px, 5.3vw, 62px); line-height: 1.08; font-weight: 400; letter-spacing: -.035em; text-wrap: balance; }
 .attention-hero > div:not(.attention-actions):not(.attention-response) { max-width: 700px; margin-top: 22px; color: var(--chrome-secondary); font-size: 16px; line-height: 26px; text-wrap: balance; }
+.attention-cold .attention-hero { padding-block: clamp(76px, 12vh, 132px); }
+.attention-cold .attention-hero h1 { max-width: 780px; }
+.attention-cold-progress { display: block; margin-top: 24px; color: var(--chrome-tertiary); font-size: 10px; line-height: 16px; font-weight: 400; }
 .attention-actions { min-height: 66px; margin-top: 26px; display: flex; align-items: center; gap: 9px; }
 .attention-actions .chrome-action-button, .attention-actions .chrome-secondary-button { height: 38px; border-radius: 19px; padding-inline: 18px; }
 .attention-response { width: fit-content; margin-top: 2px; padding: 8px 11px; border-radius: 6px; background: #e6f4ea; color: #137333; display: flex; align-items: center; gap: 7px; font-size: 11px; line-height: 17px; }
 .attention-lower { padding: 28px 0 30px; display: grid; grid-template-columns: 1.12fr .88fr; gap: 56px; border-top: 1px solid var(--chrome-border); border-bottom: 1px solid var(--chrome-border); }
+.attention-lower.attention-lower-single { grid-template-columns: 1fr; }
 .attention-time > p, .attention-loop > p { margin: 0 0 13px; color: var(--chrome-secondary); font-size: 11px; line-height: 17px; font-weight: 500; }
 .attention-bar { height: 8px; margin-bottom: 14px; overflow: hidden; display: flex; border-radius: 4px; background: var(--chrome-surface); }
 .attention-segment { height: 100%; display: block; }

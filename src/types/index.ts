@@ -221,3 +221,8 @@ export interface AttentionLedger {
   entries: AttentionEntry[];
   active?: ActiveAttentionSample;
 }
+
+export interface AttentionAcknowledgement {
+  dateKey: string;
+  domains: string[];
+}

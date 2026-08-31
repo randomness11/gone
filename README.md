@@ -81,7 +81,7 @@ Then:
 2. Enable **Developer mode**.
 3. Remove an older unpacked Tabscope build if Chrome points to a different folder.
 4. Click **Load unpacked** and select this repository’s `dist/` folder.
-5. Confirm that the extension card shows version `0.3.0`.
+5. Confirm that the extension card shows version `0.3.1`.
 6. Open a New Tab and click **Continue**.
 
 ## OpenRouter configuration

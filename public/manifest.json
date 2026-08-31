@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tabscope",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A private browser conscience that notices where your attention goes and what remains unresolved.",
   "icons": {
     "16": "icons/icon-16.png",
