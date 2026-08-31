@@ -4,7 +4,13 @@ import { ATTENTION_LEDGER, loadAttentionLedger } from '../../lib/storage';
 import { isChromeExtension } from '../../lib/tabs';
 import type { AttentionLedger } from '../../types';
 
-const LOOKBACK_MS = 60 * 60_000;
+type RangeKey = 'hour' | 'three-hours' | 'today';
+
+const RANGES: Array<{ key: RangeKey; label: string; sentence: string }> = [
+  { key: 'hour', label: 'Last hour', sentence: 'In the last hour' },
+  { key: 'three-hours', label: 'Last 3 hours', sentence: 'In the last 3 hours' },
+  { key: 'today', label: 'Today', sentence: 'Today' },
+];
 
 function domainName(domain: string): string {
   const part = domain.split('.')[0].replace(/[-_]/g, ' ');
@@ -17,6 +23,17 @@ function formatDuration(ms: number): string {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
   return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
+}
+
+function formatClock(time: number): string {
+  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(time);
+}
+
+function rangeStart(range: RangeKey, now: number): number {
+  if (range === 'hour') return now - 60 * 60_000;
+  if (range === 'three-hours') return now - 3 * 60 * 60_000;
+  const date = new Date(now);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
 function demoLedger(now: number): AttentionLedger {
@@ -34,6 +51,7 @@ function demoLedger(now: number): AttentionLedger {
 }
 
 export function AttentionMirrorView() {
+  const [range, setRange] = useState<RangeKey>('hour');
   const [ledger, setLedger] = useState<AttentionLedger>();
   const [now, setNow] = useState(Date.now());
 
@@ -51,21 +69,33 @@ export function AttentionMirrorView() {
     };
   }, []);
 
-  const summary = useMemo(() => summarizeAttention(ledger, now - LOOKBACK_MS, now), [ledger, now]);
+  const summary = useMemo(() => summarizeAttention(ledger, rangeStart(range, now), now), [ledger, now, range]);
   const visible = summary.entries.slice(0, 6);
   const top = summary.entries[0];
   const second = summary.entries[1];
   const observedEnough = summary.totalMs >= 30_000 && Boolean(top);
+  const selectedRange = RANGES.find((item) => item.key === range) ?? RANGES[0];
+  const emptyPeriod = range === 'today' ? 'today' : range === 'hour' ? 'in the last hour' : 'in the last 3 hours';
   const reflection = observedEnough
-    ? `In the last hour, ${formatDuration(top.totalMs)} of observed time went to ${domainName(top.domain)}${second ? ` and ${formatDuration(second.totalMs)} to ${domainName(second.domain)}` : ''}.`
-    : 'Nothing observed in the last hour yet.';
+    ? `${selectedRange.sentence}, ${formatDuration(top.totalMs)} of observed time went to ${domainName(top.domain)}${second ? ` and ${formatDuration(second.totalMs)} to ${domainName(second.domain)}` : ''}.`
+    : `Nothing observed ${emptyPeriod} yet.`;
 
   return (
     <main className="mirror-page">
       <section className="mirror-shell mirror-single">
+        <header className="mirror-heading">
+          <div><strong>Where your browser time went</strong><span>Across focused Chrome windows</span></div>
+          <div className="mirror-ranges" role="group" aria-label="Time range">
+            {RANGES.map((item) => <button key={item.key} className={range === item.key ? 'selected' : ''} onClick={() => setRange(item.key)}>{item.label}</button>)}
+          </div>
+        </header>
         <p className="mirror-kicker">Your browser, reflected</p>
         <h1 className="mirror-line">{reflection}</h1>
-        {observedEnough && <section className="mirror-breakdown mirror-hour-chart" aria-label="Last hour attention breakdown">
+        {observedEnough && summary.firstObservedAt !== undefined && summary.lastObservedAt !== undefined && <p className="mirror-span">
+          Chrome activity observed from <strong>{formatClock(summary.firstObservedAt)}</strong> to <strong>{formatClock(summary.lastObservedAt)}</strong>
+          <span> · {formatDuration(summary.totalMs)} total · {summary.switchCount} {summary.switchCount === 1 ? 'switch' : 'switches'}</span>
+        </p>}
+        {observedEnough && <section className="mirror-breakdown mirror-hour-chart" aria-label={`${selectedRange.label} attention breakdown`}>
           {visible.map((entry, index) => (
             <div className="mirror-row" key={entry.domain}>
               <span className={`mirror-dot mirror-dot-${(index % 5) + 1}`} />
@@ -75,7 +105,7 @@ export function AttentionMirrorView() {
             </div>
           ))}
         </section>}
-        <p className="mirror-privacy">Last hour · across focused Chrome windows · stored on this device</p>
+        <p className="mirror-privacy">Observed active-tab time · stored on this device</p>
       </section>
     </main>
   );

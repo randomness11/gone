@@ -93,6 +93,8 @@ export interface AttentionRangeSummary {
   to: number;
   totalMs: number;
   switchCount: number;
+  firstObservedAt?: number;
+  lastObservedAt?: number;
   entries: AttentionEntry[];
 }
 
@@ -123,6 +125,8 @@ export function summarizeAttention(ledger: AttentionLedger | undefined, from: nu
     to,
     totalMs: entries.reduce((sum, entry) => sum + entry.totalMs, 0),
     switchCount: Math.max(0, matching.length - 1),
+    firstObservedAt: matching.length ? Math.max(from, matching[0].startedAt) : undefined,
+    lastObservedAt: matching.length ? Math.min(to, matching.at(-1)?.endedAt ?? to) : undefined,
     entries,
   };
 }

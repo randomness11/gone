@@ -1,8 +1,8 @@
 # Tabscope
 
-Tabscope is a private attention mirror for Chrome. Every New Tab gives one direct sentence and a compact chart showing where the last hour of observed browser time went.
+Tabscope is a private attention mirror for Chrome. Every New Tab gives one direct sentence and a compact chart showing where the last hour, last three hours, or today went.
 
-There are no time-range controls, cleanup actions, diagnoses, coaching, or judgment on the result screen.
+The result includes a simple range picker, the first and last observed activity times, total observed time, and observed switches. There are no cleanup actions, diagnoses, coaching, or judgment.
 
 ## How timing works
 
@@ -52,7 +52,7 @@ Then:
 2. Enable **Developer mode**.
 3. If an older Tabscope points somewhere else, remove it.
 4. Click **Load unpacked** and select this repository’s `dist/` folder.
-5. Confirm the card shows version `0.4.2`.
+5. Confirm the card shows version `0.4.3`.
 6. Open a New Tab, click **Continue**, then browse normally.
 
 The first useful reflection appears after Tabscope has observed some active browsing. The page updates from local extension storage without a manual reload.

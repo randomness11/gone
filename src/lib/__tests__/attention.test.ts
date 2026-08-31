@@ -18,6 +18,8 @@ describe('local active-tab attention', () => {
 
     const lastTwoMinutes = summarizeAttention(finished, 61_000, 181_000);
     expect(lastTwoMinutes.totalMs).toBe(120_000);
+    expect(lastTwoMinutes.firstObservedAt).toBe(61_000);
+    expect(lastTwoMinutes.lastObservedAt).toBe(181_000);
     expect(lastTwoMinutes.entries).toHaveLength(1);
     expect(lastTwoMinutes.entries[0].domain).toBe('chatgpt.com');
 
