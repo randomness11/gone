@@ -4,13 +4,7 @@ import { ATTENTION_LEDGER, loadAttentionLedger } from '../../lib/storage';
 import { isChromeExtension } from '../../lib/tabs';
 import type { AttentionLedger } from '../../types';
 
-type RangeKey = 'hour' | 'three-hours' | 'today';
-
-const RANGES: Array<{ key: RangeKey; label: string }> = [
-  { key: 'hour', label: 'Last hour' },
-  { key: 'three-hours', label: 'Last 3 hours' },
-  { key: 'today', label: 'Today' },
-];
+const LOOKBACK_MS = 15 * 60_000;
 
 function domainName(domain: string): string {
   const part = domain.split('.')[0].replace(/[-_]/g, ' ');
@@ -23,13 +17,6 @@ function formatDuration(ms: number): string {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
   return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
-}
-
-function rangeStart(range: RangeKey, now: number): number {
-  if (range === 'hour') return now - 60 * 60_000;
-  if (range === 'three-hours') return now - 3 * 60 * 60_000;
-  const date = new Date(now);
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
 function demoLedger(now: number): AttentionLedger {
@@ -47,7 +34,6 @@ function demoLedger(now: number): AttentionLedger {
 }
 
 export function AttentionMirrorView() {
-  const [range, setRange] = useState<RangeKey>('hour');
   const [ledger, setLedger] = useState<AttentionLedger>();
   const [now, setNow] = useState(Date.now());
 
@@ -65,52 +51,20 @@ export function AttentionMirrorView() {
     };
   }, []);
 
-  const summary = useMemo(() => summarizeAttention(ledger, rangeStart(range, now), now), [ledger, now, range]);
-  const visible = summary.entries.slice(0, 8);
-  const top = visible[0];
+  const summary = useMemo(() => summarizeAttention(ledger, now - LOOKBACK_MS, now), [ledger, now]);
+  const top = summary.entries[0];
+  const second = summary.entries[1];
   const observedEnough = summary.totalMs >= 30_000 && Boolean(top);
-  const rangeLabel = RANGES.find((item) => item.key === range)?.label ?? 'Last hour';
+  const reflection = observedEnough
+    ? `In the last 15 minutes, ${formatDuration(top.totalMs)} of observed time went to ${domainName(top.domain)}${second ? ` and ${formatDuration(second.totalMs)} to ${domainName(second.domain)}` : ''}.`
+    : 'Nothing observed in the last 15 minutes yet.';
 
   return (
     <main className="mirror-page">
-      <section className="mirror-shell">
-        <header className="mirror-heading">
-          <div><strong>Your browser time</strong><span>Active tabs · stored on this device</span></div>
-          <div className="mirror-ranges" role="group" aria-label="Time range">
-            {RANGES.map((item) => <button key={item.key} className={range === item.key ? 'selected' : ''} onClick={() => setRange(item.key)}>{item.label}</button>)}
-          </div>
-        </header>
-
-        {observedEnough ? <>
-          <article className="mirror-hero">
-            <p>{rangeLabel}</p>
-            <h1>{formatDuration(summary.totalMs)} observed.</h1>
-            <div><strong>{domainName(top.domain)}</strong> held the largest share at {formatDuration(top.totalMs)}{visible.length > 1 ? `, followed by ${domainName(visible[1].domain)}.` : '.'}</div>
-          </article>
-
-          <section className="mirror-breakdown" aria-label={`${rangeLabel} attention breakdown`}>
-            {visible.map((entry, index) => (
-              <div className="mirror-row" key={entry.domain}>
-                <span className={`mirror-dot mirror-dot-${(index % 5) + 1}`} />
-                <strong>{domainName(entry.domain)}</strong>
-                <div className="mirror-track"><i className={`mirror-fill mirror-fill-${(index % 5) + 1}`} style={{ width: `${Math.max(3, (entry.totalMs / top.totalMs) * 100)}%` }} /></div>
-                <span>{formatDuration(entry.totalMs)}</span>
-              </div>
-            ))}
-          </section>
-
-          <footer className="mirror-summary">
-            <span>{visible.length} {visible.length === 1 ? 'place' : 'places'}</span>
-            <span>{summary.switchCount} observed {summary.switchCount === 1 ? 'switch' : 'switches'}</span>
-            <span>{Math.round((top.totalMs / summary.totalMs) * 100)}% went to {domainName(top.domain)}</span>
-          </footer>
-        </> : <article className="mirror-empty">
-          <p>{rangeLabel}</p>
-          <h1>Nothing to reflect yet.</h1>
-          <div>Browse normally. Tabscope will show where the time actually went—without deciding what it means.</div>
-        </article>}
-
-        <p className="mirror-privacy">Observed active-tab time only. No page contents, keystrokes, or browser history.</p>
+      <section className="mirror-shell mirror-single">
+        <p className="mirror-kicker">Your browser, reflected</p>
+        <h1 className="mirror-line">{reflection}</h1>
+        <p className="mirror-privacy">Across focused Chrome windows · stored on this device</p>
       </section>
     </main>
   );

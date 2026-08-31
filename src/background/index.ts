@@ -46,6 +46,15 @@ async function recordAttention(tab?: chrome.tabs.Tab): Promise<void> {
   } : undefined, now));
 }
 
+async function focusedActiveTab(windowId?: number): Promise<chrome.tabs.Tab | undefined> {
+  const focusedWindow = windowId === undefined
+    ? await chrome.windows.getLastFocused()
+    : await chrome.windows.get(windowId);
+  if (!focusedWindow.focused || focusedWindow.id === undefined) return undefined;
+  const [tab] = await chrome.tabs.query({ active: true, windowId: focusedWindow.id });
+  return tab;
+}
+
 async function checkpointAttention(): Promise<void> {
   const permission = await hasTabsPermission();
   if (!permission) {
@@ -53,8 +62,7 @@ async function checkpointAttention(): Promise<void> {
     if (ledger?.active) await saveAttentionLedger(transitionAttention(ledger, undefined));
     return;
   }
-  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-  await recordAttention(tab);
+  await recordAttention(await focusedActiveTab());
 }
 
 async function syncAttentionAlarm(): Promise<void> {
@@ -169,12 +177,19 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 chrome.tabs.onActivated.addListener(({ tabId }) => {
-  queueAttention(async () => recordAttention(await chrome.tabs.get(tabId)));
+  queueAttention(async () => {
+    const tab = await chrome.tabs.get(tabId);
+    const window = await chrome.windows.get(tab.windowId);
+    if (window.focused) await recordAttention(tab);
+  });
 });
 
 chrome.tabs.onUpdated.addListener((_tabId, change, tab) => {
   if (tab.active && (change.url !== undefined || change.title !== undefined)) {
-    queueAttention(async () => recordAttention(tab));
+    queueAttention(async () => {
+      const window = await chrome.windows.get(tab.windowId);
+      if (window.focused) await recordAttention(tab);
+    });
   }
 });
 
@@ -191,8 +206,7 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
       await recordAttention(undefined);
       return;
     }
-    const [tab] = await chrome.tabs.query({ active: true, windowId });
-    await recordAttention(tab);
+    await recordAttention(await focusedActiveTab(windowId));
   });
 });
 

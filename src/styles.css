@@ -421,6 +421,10 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
 .mirror-empty h1 { font-size: clamp(42px, 5.2vw, 64px); }
 .mirror-empty > div { max-width: 620px; }
 .mirror-privacy { margin: 12px 0 0; color: var(--chrome-tertiary); font-size: 9px; line-height: 15px; text-align: right; }
+.mirror-single { padding-bottom: 56px; }
+.mirror-kicker { margin: 0 0 18px; color: var(--chrome-blue); font-size: 12px; line-height: 18px; font-weight: 500; }
+.mirror-line { max-width: 900px; margin: 0; color: var(--chrome-text); font-size: clamp(46px, 5.8vw, 70px); line-height: 1.08; letter-spacing: -.04em; font-weight: 400; text-wrap: balance; }
+.mirror-single .mirror-privacy { margin-top: 30px; text-align: left; }
 
 @media (max-width: 700px) {
   .mirror-page { place-items: start center; padding: 24px 18px 64px; }

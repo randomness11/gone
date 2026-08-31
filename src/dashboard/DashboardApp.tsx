@@ -1,33 +1,9 @@
-import { ArrowRight, Eye, LockKeyhole, RefreshCcw } from 'lucide-react';
+import { ArrowRight, LockKeyhole, RefreshCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Brand } from '../components/Brand';
-import { Modal } from '../components/Modal';
 import { isChromeExtension } from '../lib/tabs';
 import { AttentionMirrorView } from './components/AttentionMirrorView';
 import { useDashboardStore } from './store';
-
-function PrivacyModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  return (
-    <Modal open={open} onClose={onClose} title="The honest privacy version">
-      <div className="privacy-copy">
-        <p className="modal-lede">Tabscope reads metadata, not pages.</p>
-        <div className="privacy-row">
-          <span>Stays on device</span>
-          <p>Raw URLs, query parameters, fragments, browser tab IDs, observed active-tab segments, duplicate detection, and your saved result.</p>
-        </div>
-        <div className="privacy-row">
-          <span>Leaves this device</span>
-          <p>Nothing in the attention mirror. The current product computes its time ranges entirely on this device.</p>
-        </div>
-        <div className="privacy-row">
-          <span>Never read in v0</span>
-          <p>Page contents, form inputs, cookies, passwords, browsing history, or the text inside your tabs.</p>
-        </div>
-        <p className="fine-print">The mirror stores normalized domains and timestamped active-tab intervals locally. Its totals are computed without an AI model.</p>
-      </div>
-    </Modal>
-  );
-}
 
 function PermissionScreen({
   error,
@@ -106,8 +82,6 @@ export function DashboardApp() {
     initialize,
     runAnalysis,
   } = useDashboardStore();
-  const [privacyOpen, setPrivacyOpen] = useState(false);
-
   useEffect(() => {
     void initialize();
   }, [initialize]);
@@ -116,9 +90,6 @@ export function DashboardApp() {
     <div className="app-shell">
       <header className="topbar">
         <Brand />
-        <div className="topbar-actions">
-          <button className="topbar-button" onClick={() => setPrivacyOpen(true)}><Eye size={14} /> Privacy</button>
-        </div>
       </header>
 
       {stage === 'booting' && <AnalyzingScreen />}
@@ -126,8 +97,6 @@ export function DashboardApp() {
       {stage === 'analyzing' && <AnalyzingScreen />}
       {stage === 'error' && <ErrorScreen error={error} retry={() => void runAnalysis(!isChromeExtension())} />}
       {stage === 'results' && <AttentionMirrorView />}
-
-      <PrivacyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
     </div>
   );
 }
