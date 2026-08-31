@@ -91,6 +91,7 @@ function demoAttention(data: PreprocessedTabs): AttentionLedger {
       activations: Math.max(1, cluster.count),
       lastSeenAt: now - index * 12 * 60_000,
     })),
+    intervals: [],
   };
 }
 

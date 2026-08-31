@@ -2,9 +2,8 @@ import { ArrowRight, Eye, LockKeyhole, RefreshCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Brand } from '../components/Brand';
 import { Modal } from '../components/Modal';
-import { CURRENT_SESSION } from '../lib/storage';
 import { isChromeExtension } from '../lib/tabs';
-import { AnalysisView } from './components/AnalysisView';
+import { AttentionMirrorView } from './components/AttentionMirrorView';
 import { useDashboardStore } from './store';
 
 function PrivacyModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -17,14 +16,14 @@ function PrivacyModal({ open, onClose }: { open: boolean; onClose: () => void })
           <p>Raw URLs, query parameters, fragments, browser tab IDs, observed active-tab segments, duplicate detection, and your saved result.</p>
         </div>
         <div className="privacy-row">
-          <span>May reach your model</span>
-          <p>Redacted titles, normalized domains, synthetic window/group labels, pinned/active state, coarse age buckets, and aggregated active-tab minutes and revisit counts by domain.</p>
+          <span>Leaves this device</span>
+          <p>Nothing in the attention mirror. The current product computes its time ranges entirely on this device.</p>
         </div>
         <div className="privacy-row">
           <span>Never read in v0</span>
           <p>Page contents, form inputs, cookies, passwords, browsing history, or the text inside your tabs.</p>
         </div>
-        <p className="fine-print">Sensitive query parameters, fragments, emails, obvious tokens, long opaque IDs, and secret-like values are stripped before inference.</p>
+        <p className="fine-print">The mirror stores normalized domains and timestamped active-tab intervals locally. Its totals are computed without an AI model.</p>
       </div>
     </Modal>
   );
@@ -44,8 +43,8 @@ function PermissionScreen({
       <section className="chrome-onboarding">
         <span className="chrome-onboarding-icon"><Brand /></span>
         <div className="chrome-onboarding-copy">
-          <h1>See what your open tabs are adding up to</h1>
-          <p>Tabscope notices where your browser time goes, what keeps pulling you back, and the decision still waiting underneath it.</p>
+          <h1>See where your browser time actually went</h1>
+          <p>Tabscope privately measures active-tab time and reflects the last hour, last three hours, and today back to you.</p>
           {error && <p className="inline-error">{error}</p>}
         </div>
         <div className="chrome-permission-note">
@@ -67,10 +66,10 @@ function PermissionScreen({
 function AnalyzingScreen() {
   const [messageIndex, setMessageIndex] = useState(0);
   const messages = [
-    'Taking a private glance',
-    'Finding the threads between your tabs',
-    'Noticing what keeps pulling you back',
-    'Reflecting it back, gently',
+    'Starting the local clock',
+    'Keeping page contents out of view',
+    'Preparing your attention mirror',
+    'Ready',
   ];
 
   useEffect(() => {
@@ -81,10 +80,10 @@ function AnalyzingScreen() {
   return (
     <main className="analyzing-screen">
       <div className="analysis-orbit" aria-hidden="true"><i /><i /><i /><span /></div>
-      <p className="eyebrow">Looking for the shape of what’s on your mind</p>
+      <p className="eyebrow">Measuring time, not judging it</p>
       <h1>{messages[messageIndex]}<span className="ellipsis">…</span></h1>
       <div className="analysis-progress"><i style={{ width: `${(messageIndex + 1) * 25}%` }} /></div>
-      <p>Only sanitized metadata is being analyzed.</p>
+      <p>Only local tab timing is being prepared.</p>
     </main>
   );
 }
@@ -103,16 +102,9 @@ function ErrorScreen({ error, retry }: { error?: string; retry: () => void }) {
 export function DashboardApp() {
   const {
     stage,
-    analysis,
-    data,
-    previousSession,
     error,
-    notice,
-    revealStep,
     initialize,
     runAnalysis,
-    syncCurrentSession,
-    setRevealStep,
   } = useDashboardStore();
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
@@ -120,27 +112,11 @@ export function DashboardApp() {
     void initialize();
   }, [initialize]);
 
-  useEffect(() => {
-    if (!isChromeExtension()) return;
-    const onStorageChange = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
-      if (area === 'local' && changes[CURRENT_SESSION]?.newValue) void syncCurrentSession();
-    };
-    chrome.storage.onChanged.addListener(onStorageChange);
-    return () => chrome.storage.onChanged.removeListener(onStorageChange);
-  }, [syncCurrentSession]);
-
-  useEffect(() => {
-    if (stage !== 'results' || revealStep >= 5) return;
-    const timer = window.setTimeout(() => setRevealStep(revealStep + 1), revealStep === 0 ? 180 : 240);
-    return () => window.clearTimeout(timer);
-  }, [revealStep, setRevealStep, stage]);
-
   return (
     <div className="app-shell">
       <header className="topbar">
         <Brand />
         <div className="topbar-actions">
-          {stage === 'results' && <button className="topbar-button" onClick={() => void runAnalysis(false)}><RefreshCcw size={14} /> Reflect again</button>}
           <button className="topbar-button" onClick={() => setPrivacyOpen(true)}><Eye size={14} /> Privacy</button>
         </div>
       </header>
@@ -149,16 +125,7 @@ export function DashboardApp() {
       {stage === 'permission' && <PermissionScreen error={error} onAnalyze={() => void runAnalysis(false)} onDemo={() => void runAnalysis(true)} />}
       {stage === 'analyzing' && <AnalyzingScreen />}
       {stage === 'error' && <ErrorScreen error={error} retry={() => void runAnalysis(!isChromeExtension())} />}
-      {stage === 'results' && analysis && data && (
-        <AnalysisView
-          analysis={analysis}
-          data={data}
-          previousSession={previousSession}
-          notice={notice}
-          revealStep={revealStep}
-          onRefresh={() => void runAnalysis(false)}
-        />
-      )}
+      {stage === 'results' && <AttentionMirrorView />}
 
       <PrivacyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
     </div>

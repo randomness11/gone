@@ -388,3 +388,52 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
 @media (prefers-color-scheme: dark) {
   .attention-response { background: #1e3a2a; color: #81c995; }
 }
+
+/* Local attention mirror */
+.mirror-page { min-height: calc(100vh - 56px); padding: 42px 24px 80px; display: grid; place-items: center; color: var(--chrome-text); }
+.mirror-shell { width: min(900px, 100%); }
+.mirror-heading { min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.mirror-heading > div:first-child { display: grid; gap: 1px; }
+.mirror-heading strong { font-size: 12px; line-height: 18px; font-weight: 500; }
+.mirror-heading span { color: var(--chrome-tertiary); font-size: 10px; line-height: 16px; }
+.mirror-ranges { padding: 3px; display: flex; gap: 2px; border-radius: 18px; background: var(--chrome-surface-soft); }
+.mirror-ranges button { height: 30px; padding: 0 13px; border: 0; border-radius: 15px; background: transparent; color: var(--chrome-secondary); cursor: pointer; font: inherit; font-size: 10px; font-weight: 500; }
+.mirror-ranges button:hover { background: var(--chrome-surface); color: var(--chrome-text); }
+.mirror-ranges button.selected { background: var(--chrome-blue-soft); color: var(--chrome-blue); }
+.mirror-hero { padding: clamp(62px, 10vh, 110px) 0 46px; border-bottom: 1px solid var(--chrome-border); }
+.mirror-hero > p, .mirror-empty > p { margin: 0 0 14px; color: var(--chrome-blue); font-size: 12px; line-height: 18px; font-weight: 500; }
+.mirror-hero h1, .mirror-empty h1 { margin: 0; font-size: clamp(48px, 6.4vw, 74px); line-height: 1.04; letter-spacing: -.045em; font-weight: 400; }
+.mirror-hero > div, .mirror-empty > div { margin-top: 19px; color: var(--chrome-secondary); font-size: 15px; line-height: 24px; }
+.mirror-hero > div strong { color: var(--chrome-text); font-weight: 500; }
+.mirror-breakdown { padding: 30px 0 26px; display: grid; gap: 15px; }
+.mirror-row { min-height: 20px; display: grid; grid-template-columns: 8px 120px minmax(120px, 1fr) 66px; align-items: center; gap: 14px; }
+.mirror-row > strong { overflow: hidden; font-size: 11px; line-height: 17px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.mirror-row > span:last-child { color: var(--chrome-secondary); font-size: 10px; text-align: right; }
+.mirror-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--chrome-blue); }
+.mirror-track { height: 6px; overflow: hidden; border-radius: 3px; background: var(--chrome-surface); }
+.mirror-fill { height: 100%; display: block; border-radius: inherit; background: var(--chrome-blue); }
+.mirror-dot-2, .mirror-fill-2 { background: #f28b82; }
+.mirror-dot-3, .mirror-fill-3 { background: #fdd663; }
+.mirror-dot-4, .mirror-fill-4 { background: #81c995; }
+.mirror-dot-5, .mirror-fill-5 { background: #c58af9; }
+.mirror-summary { min-height: 48px; padding-top: 14px; display: flex; align-items: flex-start; gap: 24px; border-top: 1px solid var(--chrome-border); color: var(--chrome-secondary); font-size: 10px; line-height: 16px; }
+.mirror-empty { min-height: 440px; padding: clamp(80px, 14vh, 150px) 0 70px; border-bottom: 1px solid var(--chrome-border); }
+.mirror-empty h1 { font-size: clamp(42px, 5.2vw, 64px); }
+.mirror-empty > div { max-width: 620px; }
+.mirror-privacy { margin: 12px 0 0; color: var(--chrome-tertiary); font-size: 9px; line-height: 15px; text-align: right; }
+
+@media (max-width: 700px) {
+  .mirror-page { place-items: start center; padding: 24px 18px 64px; }
+  .mirror-heading { align-items: flex-start; flex-direction: column; gap: 14px; }
+  .mirror-ranges { width: 100%; }
+  .mirror-ranges button { flex: 1; }
+  .mirror-hero { padding: 56px 0 36px; }
+  .mirror-hero h1 { font-size: 48px; }
+  .mirror-row { grid-template-columns: 8px 84px minmax(70px, 1fr) 52px; gap: 10px; }
+  .mirror-summary { flex-wrap: wrap; gap: 6px 18px; }
+  .mirror-privacy { text-align: left; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .mirror-page { background: #202124; }
+}

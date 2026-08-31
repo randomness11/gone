@@ -215,10 +215,18 @@ export interface ActiveAttentionSample {
   startedAt: number;
 }
 
+export interface AttentionInterval {
+  domain: string;
+  title: string;
+  startedAt: number;
+  endedAt: number;
+}
+
 export interface AttentionLedger {
   dateKey: string;
   updatedAt: number;
   entries: AttentionEntry[];
+  intervals: AttentionInterval[];
   active?: ActiveAttentionSample;
 }
 

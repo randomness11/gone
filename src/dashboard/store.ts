@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { getBuildLlmConfig } from '../lib/analysis';
 import { buildLocalAnalysis } from '../lib/localAnalysis';
 import { buildSnapshotDigest } from '../lib/live';
 import { preprocessTabs } from '../lib/preprocessing';
@@ -78,7 +77,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     set({ stage: 'analyzing', error: undefined, notice: undefined, revealStep: 0 });
     try {
       if (!demo && isChromeExtension()) {
-        const granted = await requestAnalysisPermission(getBuildLlmConfig()?.baseUrl);
+        const granted = await requestAnalysisPermission();
         if (!granted) {
           set({ stage: 'permission', error: 'Tab access was not granted. Tabscope cannot read titles or URLs without it.' });
           return;
@@ -111,21 +110,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         session,
         previousSession,
         revealStep: 0,
-        notice: demo ? undefined : 'A fast reflection is ready while Tabscope checks for a sharper read.',
+        notice: undefined,
       });
-
-      if (!demo && isChromeExtension()) {
-        void chrome.runtime.sendMessage({ type: 'RUN_LIVE_REFRESH', data }).catch(async (modelError: unknown) => {
-          const status = await loadLiveStatus();
-          await saveLiveStatus({
-            ...status,
-            state: 'error',
-            lastCheckedAt: Date.now(),
-            lastError: modelError instanceof Error ? modelError.message : 'The background reflection could not start.',
-          });
-          set({ notice: 'The fast on-device reflection is ready; the sharper model pass could not start.' });
-        });
-      }
     } catch (error) {
       set({ stage: 'error', error: error instanceof Error ? error.message : 'Something went wrong while analyzing these tabs.' });
     }

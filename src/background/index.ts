@@ -1,6 +1,5 @@
-import { analyzeTabs } from '../lib/analysis';
 import { transitionAttention } from '../lib/attention';
-import { buildSnapshotDigest, compareSnapshotDigests, shouldRefreshModel } from '../lib/live';
+import { buildSnapshotDigest, compareSnapshotDigests } from '../lib/live';
 import { buildLocalAnalysis } from '../lib/localAnalysis';
 import { preprocessTabs } from '../lib/preprocessing';
 import { redactText, sanitizeUrl } from '../lib/privacy';
@@ -9,7 +8,6 @@ import {
   loadAttentionLedger,
   loadCurrentSession,
   loadLiveStatus,
-  loadReflectionFeedback,
   loadSnapshotDigest,
   saveLiveStatus,
   saveAttentionLedger,
@@ -117,9 +115,7 @@ async function refreshLiveReflection(force = false, suppliedData?: PreprocessedT
     const nextDigest = buildSnapshotDigest(data);
     const previousDigest = await loadSnapshotDigest();
     const change = compareSnapshotDigests(previousDigest, nextDigest);
-    const retryAfterFailure = Boolean(status.lastError) && settings.modelMode === 'adaptive';
-
-    if (!force && !change.significant && !retryAfterFailure) {
+    if (!force && !change.significant) {
       await saveLiveStatus({
         ...status,
         state: 'unchanged',
@@ -130,31 +126,17 @@ async function refreshLiveReflection(force = false, suppliedData?: PreprocessedT
       return { updated: false, reason: change.reason };
     }
 
-    const useModel = force || (settings.modelMode === 'adaptive'
-      && (shouldRefreshModel(status.lastModelAt, change, now) || retryAfterFailure));
-    const [feedback, attention] = await Promise.all([loadReflectionFeedback(), loadAttentionLedger()]);
-    let analysis;
-    let modelError: string | undefined;
-    if (useModel) {
-      try {
-        analysis = await analyzeTabs(data, false, feedback, attention);
-      } catch (error) {
-        modelError = error instanceof Error ? error.message : 'The model refresh failed.';
-        analysis = buildLocalAnalysis(data);
-      }
-    } else {
-      analysis = buildLocalAnalysis(data);
-    }
+    const analysis = buildLocalAnalysis(data);
 
     await saveSession(data, analysis);
     await saveSnapshotDigest(nextDigest);
     await saveLiveStatus({
-      state: modelError ? 'error' : 'updated',
+      state: 'updated',
       lastCheckedAt: now,
       lastUpdatedAt: now,
-      lastModelAt: analysis.provider === 'llm' ? now : status.lastModelAt,
+      lastModelAt: status.lastModelAt,
       lastChangeReason: change.reason,
-      lastError: modelError,
+      lastError: undefined,
     });
     return { updated: true, reason: change.reason };
   } catch (error) {

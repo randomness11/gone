@@ -1,69 +1,47 @@
 # Tabscope
 
-Tabscope is a private Chrome New Tab conscience. It notices where observed active-tab time actually went, what keeps pulling the user back, and the unfinished decision still sitting underneath it.
+Tabscope is a private attention mirror for Chrome. Every New Tab answers a concrete question: **where did my browser time actually go?**
 
-The New Tab surface deliberately contains only three things:
+The product shows three rolling views:
 
-- one timely observation;
-- an honest local attention breakdown;
-- one unresolved thread with a way to return, acknowledge, or resolve it.
+- the last hour;
+- the last three hours;
+- today.
 
-The product stays quiet when it lacks evidence. Nothing is automatically closed, and cleanup still requires selecting every tab explicitly.
+Each view reports observed active-tab time by normalized domain, the number of observed switches, and the largest share. It deliberately avoids diagnosing, coaching, or judging the user.
 
-## Local attention timing
+## How timing works
 
-After tab permission is granted, the background worker observes active-tab transitions and checkpoints the current tab once per minute. It aggregates time by normalized domain for the current local day. Tabscope pages, browser-internal pages, unsupported URLs, and time while Chrome has no focused window are excluded.
+After the optional `tabs` permission is granted, the background worker records timestamped active-tab intervals. It checkpoints once per minute and also reacts to tab changes, navigation, window focus, startup, and tab closure.
 
-To avoid overstating time after a suspended worker or sleeping machine, any unchecked segment is capped at five minutes. This makes the displayed number a conservative measure of **observed active browser time**, not proof that the page was continuously read.
+Tabscope pages, browser-internal pages, unsupported URLs, and time while Chrome has no focused window are excluded. An unchecked segment is capped at five minutes so a suspended worker or sleeping computer cannot create a wildly inflated total. The result is a conservative measure of **observed browser attention**, not proof that a page was continuously read.
 
-## Live reflection
-
-Tabscope keeps the reflection current by default while Chrome is open. The default cadence is 10 minutes, with 30-minute and 1-hour options.
-
-Each cycle first compares a compact local digest of the current tabs with the previous digest. If nothing meaningful changed, it stops there. In adaptive mode, the model is contacted only after a meaningful change or a user-requested refresh. Provider failure falls back to a local analysis.
-
-**Reflect again** never waits on the network: Tabscope renders a local reflection immediately, then sharpens it in the background. The model pass has a seven-second total deadline, after which the local result simply remains in place.
-
-Chrome alarms are approximate: a sleeping device is not woken, and a delayed check resumes after Chrome becomes active again. The dashboard updates from extension storage without requiring a page reload.
+Intervals are retained locally for eight days, allowing accurate rolling windows across day boundaries. Existing installs begin building interval history after upgrading to `0.4.0`; older daily totals cannot be reconstructed into a timeline.
 
 ## Privacy boundary
 
-Tabscope reads tab metadata, not page contents.
+The attention mirror runs entirely on the device. It does not call an AI model or any external API.
 
-Stays on the device:
+Stored locally:
 
-- raw URLs and Chrome tab IDs;
-- query parameters and fragments before sanitization;
-- duplicate detection and saved reflection history;
-- raw active-tab timing segments and the current local attention ledger;
-- user corrections and live-refresh settings.
-
-May be sent to the configured model:
-
+- normalized domains;
 - redacted tab titles;
-- normalized domains and sanitized path hints;
-- synthetic window and group labels;
-- pinned and active state;
-- coarse age buckets such as “today” or “older.”
-- aggregated active-tab minutes and revisit counts by normalized domain.
+- timestamped active-tab intervals;
+- a compact current-tab snapshot used by legacy extension flows.
 
 Never read:
 
 - page contents;
 - form inputs, messages, cookies, passwords, or keystrokes;
-- browsing history outside the tabs currently open.
-
-Sensitive query parameters, fragments, emails, obvious tokens, long opaque IDs, and secret-like values are removed before inference.
+- Chrome browsing history.
 
 ## Permissions
 
-- `storage`: saved reflections, settings, and corrections.
-- `alarms`: one-minute local timing checkpoints and 10/30/60-minute reflection checks.
-- `tabs` (optional): requested when the user begins a reflection.
-- `tabGroups` (optional): requested only when the user creates a focus group.
-- provider host access (optional): requested for the configured model endpoint.
+- `storage`: stores the local attention ledger.
+- `alarms`: creates the one-minute timing checkpoint.
+- `tabs` (optional): requested when the user enables the mirror.
 
-There is no content script, browsing-history permission, or page-content access.
+There is no content script, host access, browsing-history permission, or page-content access.
 
 ## Install locally
 
@@ -71,7 +49,6 @@ Requirements: Node.js 20+ and Chrome/Chromium.
 
 ```bash
 npm install
-cp .env.example .env
 npm run build
 ```
 
@@ -79,20 +56,12 @@ Then:
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
-3. Remove an older unpacked Tabscope build if Chrome points to a different folder.
+3. If an older Tabscope points somewhere else, remove it.
 4. Click **Load unpacked** and select this repository’s `dist/` folder.
-5. Confirm that the extension card shows version `0.3.1`.
-6. Open a New Tab and click **Continue**.
+5. Confirm the card shows version `0.4.0`.
+6. Open a New Tab, click **Continue**, then browse normally.
 
-## OpenRouter configuration
-
-```dotenv
-LLM_BASE_URL=https://openrouter.ai/api/v1
-OPENROUTER_API_KEY=
-LLM_MODEL=inclusionai/ling-3.0-flash-fin:free
-```
-
-A browser extension cannot protect an embedded API key. A key compiled into `dist/` is suitable only for private local testing. Public distribution should use a narrow authenticated proxy and must never ship a valuable upstream key.
+The first useful reflection appears after Tabscope has observed some active browsing. The page updates from local extension storage without a manual reload.
 
 ## Development
 
@@ -107,12 +76,10 @@ npm run build
 Key files:
 
 ```text
-public/manifest.json                    Manifest V3 permissions and New Tab override
-src/background/index.ts                active-tab timing and live-reflection pipelines
-src/dashboard/DashboardApp.tsx         permission, analysis, and result states
-src/dashboard/components/AnalysisView.tsx  Chrome-native browser-conscience surface
-src/dashboard/store.ts                 manual analysis and live-session synchronization
-src/lib/privacy.ts                     title and URL sanitization boundary
-src/lib/live.ts                        local digest comparison and model-refresh policy
-src/lib/attention.ts                   conservative local active-tab timing ledger
+public/manifest.json                              Manifest V3 permissions and New Tab override
+src/background/index.ts                          active-tab event tracking and checkpoints
+src/dashboard/DashboardApp.tsx                   onboarding and New Tab states
+src/dashboard/components/AttentionMirrorView.tsx rolling attention mirror
+src/lib/attention.ts                             interval ledger and range summaries
+src/lib/privacy.ts                               title and URL sanitization boundary
 ```
