@@ -12,9 +12,9 @@ export function getBuildLlmConfig(): LlmConfig | undefined {
 
 export async function analyzeTabs(data: PreprocessedTabs, forceMock = false, feedback: ReflectionFeedback[] = []): Promise<AnalysisResult> {
   if (forceMock || import.meta.env.VITE_USE_MOCK_ANALYSIS === 'true') {
-    return buildLocalAnalysis(data, 'mock');
+    return buildLocalAnalysis(data, 'mock', feedback);
   }
   const config = getBuildLlmConfig();
-  if (!config) return buildLocalAnalysis(data, 'local');
+  if (!config) return buildLocalAnalysis(data, 'local', feedback);
   return analyzeWithLlm(data, config, feedback);
 }

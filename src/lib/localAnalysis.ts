@@ -5,6 +5,7 @@ import type {
   Mission,
   MissionStatus,
   PreprocessedTabs,
+  ReflectionFeedback,
   SanitizedTab,
 } from '../types';
 import { findDuplicateTabIds } from './preprocessing';
@@ -89,7 +90,21 @@ function missionFromRule(rule: IntentRule, members: SanitizedTab[]): Mission {
   };
 }
 
-function makeMissions(data: PreprocessedTabs): Mission[] {
+function feedbackWeight(mission: Mission, feedback: ReflectionFeedback[]): number {
+  const correction = [...feedback].reverse().find((item) => item.missionTitle.toLowerCase() === mission.title.toLowerCase());
+  if (!correction) return 0;
+  return {
+    right: 100,
+    partly: 30,
+    anotherThread: -40,
+    'another-thread': -40,
+    finished: -120,
+    'not-now': -80,
+    wrong: -140,
+  }[correction.kind] ?? 0;
+}
+
+function makeMissions(data: PreprocessedTabs, feedback: ReflectionFeedback[]): Mission[] {
   const claimed = new Set<string>();
   const missions = intentRules.flatMap((rule) => {
     const members = data.tabs.filter((tab) => !claimed.has(tab.id) && rule.pattern.test(tabText(tab)));
@@ -121,7 +136,7 @@ function makeMissions(data: PreprocessedTabs): Mission[] {
       pattern: /.*/,
     }, members));
   }
-  return missions.sort((a, b) => b.tabCount - a.tabCount).slice(0, 7);
+  return missions.sort((a, b) => (b.tabCount + feedbackWeight(b, feedback)) - (a.tabCount + feedbackWeight(a, feedback))).slice(0, 7);
 }
 
 function cleanupClass(tab: SanitizedTab, duplicateIds: Set<string>, missionIds: Set<string>): CleanupClass {
@@ -149,8 +164,8 @@ function makeCleanup(data: PreprocessedTabs, missions: Mission[]): CleanupItem[]
   });
 }
 
-export function buildLocalAnalysis(data: PreprocessedTabs, provider: 'local' | 'mock' = 'local'): AnalysisResult {
-  const missions = makeMissions(data);
+export function buildLocalAnalysis(data: PreprocessedTabs, provider: 'local' | 'mock' = 'local', feedback: ReflectionFeedback[] = []): AnalysisResult {
+  const missions = makeMissions(data, feedback);
   const cleanup = makeCleanup(data, missions);
   const top = missions[0];
   const second = missions[1];

@@ -1,27 +1,55 @@
 # Tabscope
 
-Tabscope is a Chrome New Tab extension that reflects the shape of your open attention back to you. It reads sanitized tab metadata, finds the human threads connecting those tabs, and offers a gentle place to restart.
+**Tabscope grows with you.** It starts as a playful portrait of the characters inside your open tabs, then becomes more specific as patterns return.
 
-The main surface is **Your browser remembers**:
+> At first, it sees your tabs. Then it notices your patterns. Eventually, it shows you how you are changing.
 
-- the thread you appear to be in the middle of;
-- a useful next step;
-- what meaningfully changed since the previous reflection;
-- other threads waiting nearby;
-- tabs that may be ready for a decision;
-- one unresolved question or connection worth noticing.
+Tabscope is a Chrome New Tab extension. It is not a productivity score, tab dashboard, or Q&A interface. Every New Tab shows one private, evidence-backed portrait derived from what is open and what has meaningfully recurred.
 
-Nothing is automatically closed. A focus action groups matching tabs only after the user asks, and cleanup requires selecting every tab explicitly.
+## The experience
 
-## Live reflection
+On the first reflection, current tabs become recognizable browser characters:
 
-Tabscope keeps the reflection current by default while Chrome is open. The default cadence is 10 minutes, with 30-minute and 1-hour options.
+- **The builder** — implementation docs, APIs, repositories, and product work.
+- **The possible job-switcher** — roles, companies, culture, compensation, and risk.
+- **The careful chooser** — comparisons, reviews, prices, and failure reports.
+- **The systems thinker** — infrastructure, markets, economics, and benchmarks.
+- **The collector** — articles, videos, and things left nearby for later.
 
-Each cycle first compares a compact local digest of the current tabs with the previous digest. If nothing meaningful changed, it stops there. In adaptive mode, the model is contacted only after a meaningful change or a user-requested refresh. Provider failure falls back to a local analysis.
+The portrait never claims a small cluster dominates the whole browser. It reports how much evidence it actually has and admits when the remaining tabs do not form a convincing pattern.
 
-**Reflect again** never waits on the network: Tabscope renders a local reflection immediately, then sharpens it in the background. The model pass has a seven-second total deadline, after which the local result simply remains in place.
+As meaningful snapshots accumulate, Tabscope can distinguish a first impression from something that genuinely returns:
 
-Chrome alarms are approximate: a sleeping device is not woken, and a delayed check resumes after Chrome becomes active again. The dashboard updates from extension storage without requiring a page reload.
+```text
+The first brushstroke
+  → Something is starting to repeat
+  → Becoming familiar
+  → A portrait taking shape
+```
+
+Feedback—**That’s me**, **Partly**, or **Not quite**—stays local and affects the immediate on-device read as well as later model reflections.
+
+## Instant, then sharper
+
+**Look again** never blocks on the network. Tabscope renders a local portrait immediately and gives the configured model one seven-second background window to sharpen it. If the provider is slow, unavailable, or malformed, the fast local portrait remains in place.
+
+The New Tab page listens to extension storage, so a sharper background reflection appears without reloading the page.
+
+## How it grows
+
+Tabscope keeps up to 30 days or 720 compact reflection snapshots in local extension storage. A snapshot contains:
+
+- capture time and readable tab count;
+- recurring character/thread keys;
+- redacted evidence titles;
+- normalized domains;
+- tab counts per thread.
+
+Repeated manual clicks within 30 minutes do not manufacture a pattern: identical recent portraits replace one another. A model refinement of the same snapshot also replaces the local draft instead of counting twice.
+
+Automatic reflection is enabled by default. Every 10 minutes while Chrome is available, Tabscope compares a local digest with the previous one. It stops if nothing meaningful changed. Adaptive model calls happen only after meaningful change, while manual **Look again** always requests a background refinement.
+
+Chrome alarms are approximate: sleep may delay a check, and the missed check resumes after Chrome becomes active.
 
 ## Privacy boundary
 
@@ -29,18 +57,18 @@ Tabscope reads tab metadata, not page contents.
 
 Stays on the device:
 
-- raw URLs and Chrome tab IDs;
-- query parameters and fragments before sanitization;
-- duplicate detection and saved reflection history;
-- user corrections and live-refresh settings.
+- raw URLs before sanitization and Chrome tab IDs;
+- query parameters and fragments before they are stripped;
+- current/previous reflections and compact 30-day portrait memory;
+- user feedback and live-refresh settings.
 
 May be sent to the configured model:
 
-- redacted tab titles;
+- redacted titles;
 - normalized domains and sanitized path hints;
-- synthetic window and group labels;
-- pinned and active state;
-- coarse age buckets such as “today” or “older.”
+- synthetic window/group labels;
+- pinned/active state and coarse age buckets;
+- recent user corrections.
 
 Never read:
 
@@ -48,14 +76,14 @@ Never read:
 - form inputs, messages, cookies, passwords, or keystrokes;
 - browsing history outside the tabs currently open.
 
-Sensitive query parameters, fragments, emails, obvious tokens, long opaque IDs, and secret-like values are removed before inference.
+Sensitive query parameters, fragments, emails, obvious tokens, long opaque IDs, and secret-like values are removed before inference. OpenRouter requests deny provider data collection.
 
 ## Permissions
 
-- `storage`: saved reflections, settings, and corrections.
-- `alarms`: optional 10/30/60-minute live checks.
-- `tabs` (optional): requested when the user begins a reflection.
-- `tabGroups` (optional): requested only when the user creates a focus group.
+- `storage`: portrait memory, reflections, settings, and feedback.
+- `alarms`: automatic 10/30/60-minute checks.
+- `tabs` (optional): requested when the user creates the first portrait.
+- `tabGroups` (optional): requested only when bringing a character’s tabs together.
 - provider host access (optional): requested for the configured model endpoint.
 
 There is no content script, browsing-history permission, or idle-time tracking.
@@ -74,10 +102,10 @@ Then:
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
-3. Remove the newer foreground-time build if it is installed.
+3. Remove the older Tabscope build.
 4. Click **Load unpacked** and select this repository’s `dist/` folder.
-5. Confirm that the extension card shows version `0.1.1`.
-6. Open a New Tab and click **Continue**.
+5. Confirm that the extension card shows version `0.2.0`.
+6. Open a New Tab and click **Meet my browser** if permission has not already been granted.
 
 ## OpenRouter configuration
 
@@ -92,7 +120,6 @@ A browser extension cannot protect an embedded API key. A key compiled into `dis
 ## Development
 
 ```bash
-npm run dev
 npm run typecheck
 npm run lint
 npm test
@@ -102,11 +129,9 @@ npm run build
 Key files:
 
 ```text
-public/manifest.json                    Manifest V3 permissions and New Tab override
-src/background/index.ts                optional live-reflection alarm and refresh pipeline
-src/dashboard/DashboardApp.tsx         permission, analysis, and result states
-src/dashboard/components/AnalysisView.tsx  Chrome-native working-memory surface
-src/dashboard/store.ts                 manual analysis and live-session synchronization
-src/lib/privacy.ts                     title and URL sanitization boundary
-src/lib/live.ts                        local digest comparison and model-refresh policy
+src/lib/portrait.ts                       character mapping and longitudinal portrait engine
+src/lib/storage.ts                        compact 30-day browser memory
+src/dashboard/components/PortraitView.tsx living New Tab portrait and feedback
+src/background/index.ts                   automatic meaningful-change refresh
+src/lib/privacy.ts                        title and URL sanitization boundary
 ```

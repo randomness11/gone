@@ -143,6 +143,28 @@ export interface Session {
   analysis?: AnalysisResult;
 }
 
+export interface BrowserMemoryThread {
+  key: string;
+  label: string;
+  tabCount: number;
+  domains: string[];
+  evidenceTitles: string[];
+}
+
+export interface BrowserMemorySnapshot {
+  id: string;
+  capturedAt: number;
+  tabCount: number;
+  threads: BrowserMemoryThread[];
+}
+
+export interface BrowserMemory {
+  version: 1;
+  startedAt: number;
+  updatedAt: number;
+  snapshots: BrowserMemorySnapshot[];
+}
+
 export type LiveRefreshInterval = 10 | 30 | 60;
 export type ModelRefreshMode = 'adaptive' | 'manual';
 
@@ -172,7 +194,7 @@ export interface SnapshotDigest {
   activeDomains: string[];
 }
 
-export type FeedbackKind = 'another-thread' | 'finished' | 'not-now' | 'wrong';
+export type FeedbackKind = 'right' | 'partly' | 'another-thread' | 'finished' | 'not-now' | 'wrong';
 
 export interface ReflectionFeedback {
   id: string;

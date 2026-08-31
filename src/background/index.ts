@@ -93,10 +93,10 @@ async function refreshLiveReflection(force = false, suppliedData?: PreprocessedT
         analysis = await analyzeTabs(data, false, feedback);
       } catch (error) {
         modelError = error instanceof Error ? error.message : 'The model refresh failed.';
-        analysis = buildLocalAnalysis(data);
+        analysis = buildLocalAnalysis(data, 'local', feedback);
       }
     } else {
-      analysis = buildLocalAnalysis(data);
+      analysis = buildLocalAnalysis(data, 'local', feedback);
     }
 
     await saveSession(data, analysis);

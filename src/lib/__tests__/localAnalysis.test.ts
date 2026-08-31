@@ -21,4 +21,16 @@ describe('local analysis and cleanup classification', () => {
     const activeIds = new Set(data.activeTabIds);
     expect(analysis.cleanup.filter((item) => activeIds.has(item.tabId)).every((item) => item.classification === 'essential')).toBe(true);
   });
+
+  it('uses portrait feedback to make the immediate local read grow with the user', () => {
+    const browserMission = analysis.missions.find((mission) => /browser/i.test(mission.title))!;
+    const corrected = buildLocalAnalysis(data, 'local', [{
+      id: 'feedback_1',
+      createdAt: 2_000_000_000_001,
+      sessionId: 'session_1',
+      missionTitle: browserMission.title,
+      kind: 'right',
+    }]);
+    expect(corrected.missions[0].title).toBe(browserMission.title);
+  });
 });
