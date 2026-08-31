@@ -1,6 +1,8 @@
-# Tabscope
+# GONE
 
-Tabscope is a private attention mirror for Chrome. It replaces the New Tab page with a factual view of where your active browser time went—without reading page contents or judging what you were doing.
+**Here’s where the time went.**
+
+GONE is a private attention mirror for Chrome. It replaces the New Tab page with a factual view of where your active browser time went—without reading page contents or judging what you were doing.
 
 ## What you see
 
@@ -21,7 +23,7 @@ You need:
 - Node.js 20 or newer;
 - npm.
 
-### 1. Download and build Tabscope
+### 1. Download and build GONE
 
 ```bash
 git clone https://github.com/randomness11/tabscope.git
@@ -38,7 +40,7 @@ The production extension is created in `dist/`.
 2. Enable **Developer mode** in the top-right corner.
 3. Click **Load unpacked**.
 4. Select the generated `tabscope/dist/` folder—not the repository root.
-5. Confirm that the Tabscope card shows version `0.4.5`.
+5. Confirm that the GONE card shows version `0.5.0`.
 6. Open a new tab.
 7. Click **Continue** and approve tab and favicon access.
 
@@ -58,13 +60,13 @@ npm install
 npm run build
 ```
 
-Then return to `chrome://extensions` and click the **Reload** button on the Tabscope card.
+Then return to `chrome://extensions` and click the **Reload** button on the GONE card.
 
 Important: the reflection data updates automatically, but Chrome does **not** automatically reload changed extension code. After pulling or editing source files, rebuild and use the extension-card Reload button.
 
 ## How timing works
 
-After tab access is granted, Tabscope records timestamped active-tab intervals locally. It reacts to:
+After tab access is granted, GONE records timestamped active-tab intervals locally. It reacts to:
 
 - tab activation and navigation;
 - Chrome window focus changes;
@@ -72,7 +74,7 @@ After tab access is granted, Tabscope records timestamped active-tab intervals l
 - browser startup;
 - a one-minute safety checkpoint.
 
-Tabscope excludes its own New Tab page, Chrome-internal pages, unsupported URLs, and time when Chrome has no focused window. If the background worker sleeps, a single unchecked segment is capped at five minutes to prevent inflated totals.
+GONE excludes its own New Tab page, Chrome-internal pages, unsupported URLs, and time when Chrome has no focused window. If the background worker sleeps, a single unchecked segment is capped at five minutes to prevent inflated totals.
 
 Intervals are retained locally for eight days. The displayed values are conservative **observed active-tab time**, not proof that every second was spent reading the page.
 
@@ -87,9 +89,9 @@ Stored locally:
 - timestamped active-tab intervals;
 - a compact current-tab snapshot used by the extension.
 
-Favicons are read from Chrome's local cache when the breakdown is displayed; Tabscope does not send domains to a logo provider.
+Favicons are read from Chrome's local cache when the breakdown is displayed; GONE does not send domains to a logo provider.
 
-Tabscope never reads:
+GONE never reads:
 
 - page contents;
 - form inputs, messages, cookies, passwords, or keystrokes;
@@ -113,11 +115,11 @@ There are no content scripts, host permissions, or browsing-history permissions.
 - Confirm you clicked **Continue** and granted access.
 - Browse normal `http://` or `https://` pages while Chrome is focused.
 - Wait at least one minute or switch tabs once, then open a new tab.
-- Chrome settings pages and the Tabscope page itself are intentionally excluded.
+- Chrome settings pages and the GONE page itself are intentionally excluded.
 
 ### Activity from another window is missing
 
-Tabscope counts the window you are actively using. Switch focus to the other Chrome window and browse normally; its activity will join the same local timeline. Tabs left open in an unfocused window do not accumulate time.
+GONE counts the window you are actively using. Switch focus to the other Chrome window and browse normally; its activity will join the same local timeline. Tabs left open in an unfocused window do not accumulate time.
 
 ### Source changes are not appearing
 
@@ -128,7 +130,7 @@ Tabscope counts the window you are actively using. Switch focus to the other Chr
 
 ### The extension reports a service-worker error
 
-Open `chrome://extensions`, find Tabscope, and inspect the error shown on its card. Make sure the selected folder contains `manifest.json` directly; if it does not, you selected the wrong folder.
+Open `chrome://extensions`, find GONE, and inspect the error shown on its card. Make sure the selected folder contains `manifest.json` directly; if it does not, you selected the wrong folder.
 
 ## Development
 

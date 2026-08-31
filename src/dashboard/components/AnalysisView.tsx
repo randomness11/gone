@@ -125,7 +125,7 @@ function LiveSettingsModal({
     <Modal open={open} onClose={onClose} title="Live reflection">
       <div className="live-settings">
         <div className="settings-row">
-          <div><strong>Keep Tabscope current</strong><p>Check locally for meaningful changes while Chrome is open.</p></div>
+          <div><strong>Keep GONE current</strong><p>Check locally for meaningful changes while Chrome is open.</p></div>
           <button className={`chrome-switch ${settings.enabled ? 'on' : ''}`} role="switch" aria-checked={settings.enabled} onClick={() => void onChange({ enabled: !settings.enabled, promptDismissed: true })}><i /></button>
         </div>
 
@@ -152,7 +152,7 @@ function LiveSettingsModal({
           <button className="chrome-action-button" onClick={onRefresh}><RefreshCcw size={15} /> Refresh now</button>
         </div>
 
-        <button className={`clear-memory-button ${clearReady ? 'confirm' : ''}`} onClick={() => void clearMemory()}>{clearReady ? 'Confirm: clear reflections and corrections' : 'Clear Tabscope memory'}</button>
+        <button className={`clear-memory-button ${clearReady ? 'confirm' : ''}`} onClick={() => void clearMemory()}>{clearReady ? 'Confirm: clear reflections and corrections' : 'Clear GONE memory'}</button>
       </div>
     </Modal>
   );
@@ -176,13 +176,13 @@ function CorrectionModal({
     { kind: 'wrong', title: 'This is simply wrong', detail: 'Lower confidence in this interpretation.' },
   ];
   return (
-    <Modal open={open} onClose={onClose} title="Help Tabscope understand">
+    <Modal open={open} onClose={onClose} title="Help GONE understand">
       <div className="correction-panel">
-        <p>Tabscope thought <strong>{mission?.title ?? 'this thread'}</strong> was central. What should it know?</p>
+        <p>GONE thought <strong>{mission?.title ?? 'this thread'}</strong> was central. What should it know?</p>
         <div className="correction-options">
           {options.map((option) => <button key={option.kind} onClick={() => onSelect(option.kind)}><span>{option.title}</span><small>{option.detail}</small><ArrowRight size={16} /></button>)}
         </div>
-        <p className="correction-foot">Your correction stays in Tabscope’s local storage and guides later reflections.</p>
+        <p className="correction-foot">Your correction stays in GONE’s local storage and guides later reflections.</p>
       </div>
     </Modal>
   );
@@ -381,7 +381,7 @@ export function AnalysisView({ analysis, data, notice, revealStep, onRefresh }: 
       kind,
     });
     setCorrectionOpen(false);
-    setCorrectionMessage(kind === 'finished' ? 'Resolved. Tabscope will stop carrying this forward.' : kind === 'not-now' ? 'Got it — this was chosen time, not accidental drift.' : 'Thanks — the reflection has been corrected.');
+    setCorrectionMessage(kind === 'finished' ? 'Resolved. GONE will stop carrying this forward.' : kind === 'not-now' ? 'Got it — this was chosen time, not accidental drift.' : 'Thanks — the reflection has been corrected.');
     if (kind === 'finished') setResolved(true);
     if (kind !== 'not-now' && kind !== 'finished' && mission.id === primaryMission.id && analysis.missions.length > 1) setMissionIndex((current) => (current + 1) % analysis.missions.length);
   };
@@ -436,7 +436,7 @@ export function AnalysisView({ analysis, data, notice, revealStep, onRefresh }: 
           </> : <>
             <p>Nothing worth interrupting yet</p>
             <h1>Go browse. I’ll notice what keeps pulling you back.</h1>
-            <div>Tabscope needs about ten minutes of observed browser time before it has anything honest to say.</div>
+            <div>GONE needs about ten minutes of observed browser time before it has anything honest to say.</div>
             <small className="attention-cold-progress">{totalAttention ? `${formatAttention(totalAttention)} observed so far` : 'Timing starts when you move through normal web tabs'}</small>
           </>}
         </article>
@@ -454,7 +454,7 @@ export function AnalysisView({ analysis, data, notice, revealStep, onRefresh }: 
             <p>Still unresolved</p>
             <div className={resolved ? 'resolved' : ''}>
               <strong>{resolved ? 'Resolved just now.' : openQuestion.title}</strong>
-              <span>{resolved ? 'Tabscope will stop carrying this question into later reflections.' : openQuestion.description}</span>
+              <span>{resolved ? 'GONE will stop carrying this question into later reflections.' : openQuestion.description}</span>
               {!resolved && <button onClick={() => void recordCorrection('finished', primaryMission)}>Mark this resolved</button>}
             </div>
           </section>}
@@ -462,7 +462,7 @@ export function AnalysisView({ analysis, data, notice, revealStep, onRefresh }: 
 
         <footer className="attention-footer">
           <div>{hasEarnedInsight && <><button onClick={() => setDetailsOpen(true)}>Why this?</button><button onClick={() => setCorrectionOpen(true)}>Not quite</button>{looseCount > 0 && <button onClick={() => setCleanupOpen(true)}>Review {looseCount} tabs</button>}</>}</div>
-          <span>{notice ?? 'Active-tab time stays on this device'} · Tabscope never reads page contents</span>
+          <span>{notice ?? 'Active-tab time stays on this device'} · GONE never reads page contents</span>
         </footer>
       </section>
 

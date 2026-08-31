@@ -85,7 +85,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       if (!demo && isChromeExtension()) {
         const granted = await requestAnalysisPermission();
         if (!granted) {
-          set({ stage: 'permission', error: 'Tab access was not granted. Tabscope cannot read titles or URLs without it.' });
+          set({ stage: 'permission', error: 'Tab access was not granted. GONE cannot read titles or URLs without it.' });
           return;
         }
       }

@@ -10,7 +10,7 @@ function PrivacyModal({ open, onClose }: { open: boolean; onClose: () => void })
   return (
     <Modal open={open} onClose={onClose} title="The honest privacy version">
       <div className="privacy-copy">
-        <p className="modal-lede">Tabscope reads tab metadata, not pages.</p>
+        <p className="modal-lede">GONE reads tab metadata, not pages.</p>
         <div className="privacy-row">
           <span>Stays on device</span>
           <p>Normalized domains, redacted titles, and timestamped active-tab intervals.</p>
@@ -43,14 +43,14 @@ function PermissionScreen({
         <span className="chrome-onboarding-icon"><Brand /></span>
         <div className="chrome-onboarding-copy">
           <h1>See where your browser time actually went</h1>
-          <p>Tabscope privately measures active-tab time and reflects the last hour, last three hours, and today back to you.</p>
+          <p>GONE privately measures active-tab time and reflects the last hour, last three hours, and today back to you.</p>
           {error && <p className="inline-error">{error}</p>}
         </div>
         <div className="chrome-permission-note">
           <LockKeyhole size={18} />
           <div>
             <strong>Your pages stay private</strong>
-            <p>Tabscope stores active-tab time, tab titles, cleaned URL hints, and Chrome’s cached site icons locally. It never reads page contents.</p>
+            <p>GONE stores active-tab time, tab titles, cleaned URL hints, and Chrome’s cached site icons locally. It never reads page contents.</p>
           </div>
         </div>
         <div className="chrome-onboarding-actions">

@@ -8,7 +8,7 @@ export interface LlmConfig {
   model: string;
 }
 
-export const ANALYSIS_SYSTEM_PROMPT = `You are the browser conscience inside Tabscope. You appear for one moment when the user opens a new tab.
+export const ANALYSIS_SYSTEM_PROMPT = `You are the browser conscience inside GONE. You appear for one moment when the user opens a new tab.
 
 Your job is to notice the single most timely, concrete thing in the user's observed active-tab time and open tabs: where attention actually went, what keeps pulling them back, and what unfinished decision may still be underneath it. Do not produce a dashboard in prose. Create one small moment of recognition, then preserve structured missions and evidence for the product.
 
@@ -72,7 +72,7 @@ export function buildCompletionBody(config: LlmConfig, messages: CompletionMessa
         type: 'function' as const,
         function: {
           name: 'submit_tabscope_analysis',
-          description: 'Submit the complete Tabscope analysis as one JSON object.',
+          description: 'Submit the complete GONE analysis as one JSON object.',
           parameters: {
             type: 'object' as const,
             properties: {
@@ -133,7 +133,7 @@ async function requestCompletion(config: LlmConfig, messages: CompletionMessage[
     });
   } catch (error) {
     if (controller.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
-      throw new Error('The model took too long, so Tabscope kept the fast on-device reflection.');
+      throw new Error('The model took too long, so GONE kept the fast on-device reflection.');
     }
     throw error;
   } finally {
