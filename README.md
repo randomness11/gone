@@ -54,7 +54,7 @@ The production extension is created in `dist/`.
 2. Enable **Developer mode** in the top-right corner.
 3. Click **Load unpacked**.
 4. Select the generated `gone/dist/` folder—not the repository root.
-5. Confirm that the GONE card shows version `0.6.1`.
+5. Confirm that the GONE card shows version `0.6.2`.
 6. Open a new tab.
 7. Click **Continue** and approve tab and favicon access.
 

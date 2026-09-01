@@ -410,15 +410,12 @@ button:focus-visible, .topbar-button:focus-visible { outline: none; box-shadow: 
 .mirror-row > strong { overflow: hidden; font-size: 11px; line-height: 17px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .mirror-row > span:last-child { color: var(--chrome-secondary); font-size: 10px; text-align: right; }
 .mirror-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--chrome-blue); }
-.mirror-favicon { width: 18px; height: 18px; position: relative; display: grid; place-items: center; overflow: hidden; border-radius: 4px; background: var(--chrome-blue-soft); color: var(--chrome-blue); font-size: 9px; line-height: 1; font-weight: 600; }
-.mirror-favicon > img { width: 16px; height: 16px; position: absolute; inset: 1px; object-fit: contain; }
-.mirror-favicon-2 { background: #493331; color: #f28b82; }
-.mirror-favicon-3 { background: #4b442b; color: #fdd663; }
-.mirror-favicon-4 { background: #263e30; color: #81c995; }
-.mirror-favicon-5 { background: #41304d; color: #c58af9; }
-.mirror-inline-favicon { width: 30px; height: 30px; margin: 0 1px; display: inline-grid; flex: 0 0 auto; border-radius: 7px; font-size: 14px; }
-.mirror-inline-favicon > span { font-size: 9px; }
-.mirror-inline-favicon > img { width: 78%; height: 78%; inset: 11%; }
+.mirror-favicon { width: 18px; height: 18px; position: relative; display: grid; place-items: center; overflow: visible; color: var(--chrome-blue); font-size: 9px; line-height: 1; font-weight: 600; }
+.mirror-favicon > img { width: 18px; height: 18px; display: block; object-fit: contain; }
+.mirror-favicon-fallback { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: var(--chrome-surface); color: var(--chrome-secondary); }
+.mirror-inline-favicon { width: 26px; height: 26px; margin: 0 1px; display: inline-grid; flex: 0 0 auto; font-size: 12px; }
+.mirror-inline-favicon > img { width: 26px; height: 26px; }
+.mirror-inline-favicon > .mirror-favicon-fallback { width: 26px; height: 26px; }
 .mirror-track { height: 6px; overflow: hidden; border-radius: 3px; background: var(--chrome-surface); }
 .mirror-fill { height: 100%; display: block; border-radius: inherit; background: var(--chrome-blue); }
 .mirror-dot-2, .mirror-fill-2 { background: #f28b82; }

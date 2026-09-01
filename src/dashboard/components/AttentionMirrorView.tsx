@@ -88,6 +88,7 @@ function faviconUrl(domain: string, size = 32): string | undefined {
 function SiteFavicon({ domain, index = 0, featured = false }: { domain: string; index?: number; featured?: boolean }) {
   const name = domainName(domain);
   const source = faviconUrl(domain, featured ? 64 : 32);
+  const [failed, setFailed] = useState(false);
   return (
     <span
       className={`mirror-favicon mirror-favicon-${(index % 5) + 1}${featured ? ' mirror-inline-favicon' : ''}`}
@@ -96,8 +97,9 @@ function SiteFavicon({ domain, index = 0, featured = false }: { domain: string; 
       title={featured ? name : undefined}
       aria-hidden={featured ? undefined : true}
     >
-      <span aria-hidden="true">{name.charAt(0)}</span>
-      {source && <img src={source} alt="" onError={(event) => { event.currentTarget.hidden = true; }} />}
+      {source && !failed
+        ? <img src={source} alt="" onError={() => setFailed(true)} />
+        : <span className="mirror-favicon-fallback" aria-hidden="true">{name.charAt(0)}</span>}
     </span>
   );
 }
