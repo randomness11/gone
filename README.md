@@ -7,7 +7,7 @@ GONE is a private attention mirror for Chrome. It replaces the New Tab page with
 ## What you see
 
 - **Last hour**, **Last 3 hours**, and **Today** views.
-- One plain-language reflection of the selected period.
+- One plain-language reflection using recognizable site favicons.
 - First and last observed activity times.
 - Total observed active-tab time and observed switches.
 - A domain breakdown with Chrome-cached site favicons.
@@ -53,7 +53,7 @@ The production extension is created in `dist/`.
 2. Enable **Developer mode** in the top-right corner.
 3. Click **Load unpacked**.
 4. Select the generated `gone/dist/` folder—not the repository root.
-5. Confirm that the GONE card shows version `0.5.0`.
+5. Confirm that the GONE card shows version `0.5.1`.
 6. Open a new tab.
 7. Click **Continue** and approve tab and favicon access.
 

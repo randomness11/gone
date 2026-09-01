@@ -36,12 +36,29 @@ function rangeStart(range: RangeKey, now: number): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
-function faviconUrl(domain: string): string | undefined {
+function faviconUrl(domain: string, size = 32): string | undefined {
   if (!isChromeExtension()) return undefined;
   const url = new URL(chrome.runtime.getURL('/_favicon/'));
   url.searchParams.set('pageUrl', `https://${domain}/`);
-  url.searchParams.set('size', '32');
+  url.searchParams.set('size', String(size));
   return url.toString();
+}
+
+function SiteFavicon({ domain, index = 0, inline = false }: { domain: string; index?: number; inline?: boolean }) {
+  const name = domainName(domain);
+  const source = faviconUrl(domain, inline ? 64 : 32);
+  return (
+    <span
+      className={`mirror-favicon mirror-favicon-${(index % 5) + 1}${inline ? ' mirror-inline-favicon' : ''}`}
+      role={inline ? 'img' : undefined}
+      aria-label={inline ? name : undefined}
+      title={inline ? name : undefined}
+      aria-hidden={inline ? undefined : true}
+    >
+      <span aria-hidden="true">{name.charAt(0)}</span>
+      {source && <img src={source} alt="" onError={(event) => { event.currentTarget.hidden = true; }} />}
+    </span>
+  );
 }
 
 function demoLedger(now: number): AttentionLedger {
@@ -84,9 +101,7 @@ export function AttentionMirrorView() {
   const observedEnough = summary.totalMs >= 30_000 && Boolean(top);
   const selectedRange = RANGES.find((item) => item.key === range) ?? RANGES[0];
   const emptyPeriod = range === 'today' ? 'today' : range === 'hour' ? 'in the last hour' : 'in the last 3 hours';
-  const reflection = observedEnough
-    ? `${selectedRange.sentence}, ${formatDuration(top.totalMs)} of observed time went to ${domainName(top.domain)}${second ? ` and ${formatDuration(second.totalMs)} to ${domainName(second.domain)}` : ''}.`
-    : `Nothing observed ${emptyPeriod} yet.`;
+  const emptyReflection = `Nothing observed ${emptyPeriod} yet.`;
 
   return (
     <main className="mirror-page">
@@ -98,7 +113,12 @@ export function AttentionMirrorView() {
           </div>
         </header>
         <p className="mirror-kicker">Your browser, reflected</p>
-        <h1 className="mirror-line">{reflection}</h1>
+        <h1 className="mirror-line">
+          {observedEnough ? <>
+            {selectedRange.sentence}, {formatDuration(top.totalMs)} of observed time went to <SiteFavicon domain={top.domain} inline />
+            {second && <> and {formatDuration(second.totalMs)} to <SiteFavicon domain={second.domain} index={1} inline /></>}.
+          </> : emptyReflection}
+        </h1>
         {observedEnough && summary.firstObservedAt !== undefined && summary.lastObservedAt !== undefined && <p className="mirror-span">
           Chrome activity observed from <strong>{formatClock(summary.firstObservedAt)}</strong> to <strong>{formatClock(summary.lastObservedAt)}</strong>
           <span> · {formatDuration(summary.totalMs)} total · {summary.switchCount} {summary.switchCount === 1 ? 'switch' : 'switches'}</span>
@@ -106,10 +126,7 @@ export function AttentionMirrorView() {
         {observedEnough && <section className="mirror-breakdown mirror-hour-chart" aria-label={`${selectedRange.label} attention breakdown`}>
           {visible.map((entry, index) => (
             <div className="mirror-row" key={entry.domain}>
-              <span className={`mirror-favicon mirror-favicon-${(index % 5) + 1}`}>
-                <span>{domainName(entry.domain).charAt(0)}</span>
-                {faviconUrl(entry.domain) && <img src={faviconUrl(entry.domain)} alt="" onError={(event) => { event.currentTarget.hidden = true; }} />}
-              </span>
+              <SiteFavicon domain={entry.domain} index={index} />
               <strong>{domainName(entry.domain)}</strong>
               <div className="mirror-track"><i className={`mirror-fill mirror-fill-${(index % 5) + 1}`} style={{ width: `${Math.max(3, (entry.totalMs / top.totalMs) * 100)}%` }} /></div>
               <span>{formatDuration(entry.totalMs)}</span>
