@@ -24,12 +24,12 @@
 html, body, #root { min-width: 320px; min-height: 100%; }
 html, body { margin: 0; background: #fff; color: var(--chrome-text); }
 button { font: inherit; }
-button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .4); }
+button:focus-visible, .topbar-button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .4); }
 
 .app-shell { min-height: 100vh; background: #fff; }
 .topbar { height: 56px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, .96); position: relative; z-index: 20; }
 .topbar-actions { display: flex; gap: 4px; }
-.topbar-button { height: 32px; padding: 0 12px; border: 0; border-radius: 16px; background: transparent; color: var(--chrome-secondary); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; line-height: 20px; font-weight: 500; transition: background-color 150ms ease-in-out; }
+.topbar-button { height: 32px; padding: 0 12px; border: 0; border-radius: 16px; background: transparent; color: var(--chrome-secondary); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; line-height: 20px; font-weight: 500; text-decoration: none; transition: background-color 150ms ease-in-out; }
 .topbar-button:hover { background: rgba(60, 64, 67, .08); color: var(--chrome-text); }
 
 .brand { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; letter-spacing: 0; }

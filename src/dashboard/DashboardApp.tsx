@@ -1,4 +1,4 @@
-import { ArrowRight, Eye, LockKeyhole, RefreshCcw } from 'lucide-react';
+import { ArrowRight, Coffee, Eye, LockKeyhole, RefreshCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Brand } from '../components/Brand';
 import { Modal } from '../components/Modal';
@@ -115,6 +115,14 @@ export function DashboardApp() {
       <header className="topbar">
         <Brand />
         <div className="topbar-actions">
+          <a
+            className="topbar-button"
+            href="https://buymeacoffee.com/ankitkr0"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Coffee size={14} /> Buy me a coffee
+          </a>
           <button className="topbar-button" onClick={() => setPrivacyOpen(true)}><Eye size={14} /> Privacy</button>
         </div>
       </header>

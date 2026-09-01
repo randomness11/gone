@@ -54,7 +54,7 @@ The production extension is created in `dist/`.
 2. Enable **Developer mode** in the top-right corner.
 3. Click **Load unpacked**.
 4. Select the generated `gone/dist/` folder—not the repository root.
-5. Confirm that the GONE card shows version `0.6.0`.
+5. Confirm that the GONE card shows version `0.6.1`.
 6. Open a new tab.
 7. Click **Continue** and approve tab and favicon access.
 
@@ -145,6 +145,10 @@ GONE counts the window you are actively using. Switch focus to the other Chrome 
 ### The extension reports a service-worker error
 
 Open `chrome://extensions`, find GONE, and inspect the error shown on its card. Make sure the selected folder contains `manifest.json` directly; if it does not, you selected the wrong folder.
+
+## Support GONE
+
+If GONE has helped you see where your browser time goes, you can [buy me a coffee](https://buymeacoffee.com/ankitkr0).
 
 ## Development
 
