@@ -441,6 +441,57 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
 .mirror-span span { color: var(--chrome-tertiary); }
 .mirror-single .mirror-privacy { margin-top: 30px; text-align: left; }
 .mirror-hour-chart { max-width: 760px; margin-top: 42px; border-top: 1px solid var(--chrome-border); border-bottom: 1px solid var(--chrome-border); }
+.mirror-dashboard { width: min(1080px, 100%); }
+.mirror-dashboard .mirror-heading { margin-bottom: clamp(46px, 7vh, 74px); }
+.mirror-content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 36px; align-items: start; }
+.mirror-main-column { min-width: 0; }
+.mirror-dashboard .mirror-line { max-width: 720px; font-size: clamp(44px, 4.5vw, 60px); }
+.mirror-dashboard .mirror-hour-chart { max-width: none; margin-top: 38px; }
+.mirror-dashboard .mirror-row { grid-template-columns: 18px 112px minmax(100px, 1fr) 68px 44px; gap: 10px; }
+.mirror-dashboard .mirror-row > span:nth-last-child(2), .mirror-dashboard .mirror-row > span:last-child { color: var(--chrome-secondary); font-size: 10px; text-align: right; }
+.mirror-dashboard .mirror-row > span:last-child { color: var(--chrome-tertiary); }
+.mirror-more-row { min-height: 34px; padding-top: 13px; display: flex; justify-content: space-between; border-top: 1px solid var(--chrome-border); color: var(--chrome-secondary); font-size: 10px; line-height: 16px; }
+.mirror-sidebar { display: grid; gap: 14px; }
+.mirror-stat-card, .mirror-chart-card, .mirror-shape-card { overflow: hidden; border: 1px solid var(--chrome-border); border-radius: 10px; background: color-mix(in srgb, var(--chrome-surface-soft) 82%, transparent); }
+.mirror-stat-card > div { min-height: 88px; padding: 15px 17px; display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; border-bottom: 1px solid var(--chrome-border); }
+.mirror-stat-card > div:last-child { border-bottom: 0; }
+.mirror-stat-card svg { width: 24px; height: 24px; margin-top: 2px; color: var(--chrome-text); stroke-width: 1.7; }
+.mirror-stat-card span { min-width: 0; display: grid; }
+.mirror-stat-card strong { color: var(--chrome-text); font-size: 18px; line-height: 22px; font-weight: 500; }
+.mirror-stat-card small { margin-top: 2px; color: var(--chrome-secondary); font-size: 9px; line-height: 14px; }
+.mirror-stat-card em { margin-top: 3px; color: var(--chrome-blue); font-size: 9px; line-height: 14px; font-style: normal; }
+.mirror-chart-card, .mirror-shape-card { padding: 18px; }
+.mirror-chart-card h3, .mirror-shape-card h3 { margin: 0 0 13px; color: var(--chrome-text); font-size: 11px; line-height: 17px; font-weight: 500; }
+.mirror-chart-card svg { width: 100%; height: 118px; overflow: visible; }
+.mirror-time-line { fill: none; stroke: var(--chrome-blue); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mirror-chart-card circle { fill: var(--chrome-blue); }
+.mirror-average-line { stroke: var(--chrome-tertiary); stroke-width: 1; stroke-dasharray: 4 4; opacity: .65; }
+.mirror-chart-axis { margin-top: -3px; display: flex; justify-content: space-between; color: var(--chrome-tertiary); font-size: 8px; line-height: 13px; }
+.mirror-chart-legend { margin-top: 12px; display: flex; gap: 14px; color: var(--chrome-secondary); font-size: 8px; line-height: 13px; }
+.mirror-chart-legend span { display: flex; align-items: center; gap: 5px; }
+.mirror-chart-legend i { width: 6px; height: 6px; border-radius: 50%; background: var(--chrome-blue); }
+.mirror-chart-legend span:last-child i { height: 1px; border-radius: 0; background: var(--chrome-tertiary); }
+.mirror-shape-content { display: grid; grid-template-columns: 105px 1fr; gap: 15px; align-items: center; }
+.mirror-donut { width: 104px; height: 104px; position: relative; display: grid; place-items: center; border-radius: 50%; }
+.mirror-donut::after { content: ''; width: 72px; height: 72px; position: absolute; border-radius: 50%; background: var(--chrome-surface-soft); }
+.mirror-donut > span { position: relative; z-index: 1; display: grid; text-align: center; }
+.mirror-donut strong { font-size: 20px; line-height: 24px; font-weight: 400; }
+.mirror-donut small { color: var(--chrome-secondary); font-size: 8px; line-height: 12px; }
+.mirror-shape-legend { display: grid; gap: 13px; }
+.mirror-shape-legend > span { position: relative; padding-left: 10px; display: grid; color: var(--chrome-secondary); font-size: 9px; line-height: 14px; }
+.mirror-shape-legend i { width: 6px; height: 6px; position: absolute; left: 0; top: 4px; border-radius: 50%; background: var(--chrome-blue); }
+.mirror-shape-legend > span:last-child i { background: #f28b82; }
+.mirror-shape-legend strong { color: var(--chrome-text); font-size: 11px; font-weight: 500; }
+.mirror-shape-legend small { color: var(--chrome-tertiary); font-size: 8px; }
+
+@media (max-width: 980px) {
+  .mirror-dashboard { width: min(760px, 100%); }
+  .mirror-content-grid { grid-template-columns: 1fr; }
+  .mirror-sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mirror-stat-card { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); }
+  .mirror-stat-card > div { border-right: 1px solid var(--chrome-border); border-bottom: 0; }
+  .mirror-stat-card > div:last-child { border-right: 0; }
+}
 
 @media (max-width: 700px) {
   .mirror-page { place-items: start center; padding: 24px 18px 64px; }
@@ -450,6 +501,11 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
   .mirror-hero { padding: 56px 0 36px; }
   .mirror-hero h1 { font-size: 48px; }
   .mirror-row { grid-template-columns: 18px 84px minmax(70px, 1fr) 52px; gap: 10px; }
+  .mirror-dashboard .mirror-row { grid-template-columns: 18px 78px minmax(60px, 1fr) 54px; }
+  .mirror-dashboard .mirror-row > span:last-child { display: none; }
+  .mirror-sidebar { grid-template-columns: 1fr; }
+  .mirror-stat-card { grid-column: auto; grid-template-columns: 1fr; }
+  .mirror-stat-card > div { border-right: 0; border-bottom: 1px solid var(--chrome-border); }
   .mirror-summary { flex-wrap: wrap; gap: 6px 18px; }
   .mirror-privacy { text-align: left; }
 }
