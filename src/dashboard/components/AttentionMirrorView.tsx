@@ -13,7 +13,18 @@ const RANGES: Array<{ key: RangeKey; label: string; sentence: string }> = [
 ];
 
 function domainName(domain: string): string {
-  const part = domain.split('.')[0].replace(/[-_]/g, ' ');
+  const known: Record<string, string> = {
+    'chatgpt.com': 'ChatGPT',
+    'mail.google.com': 'Gmail',
+    'web.whatsapp.com': 'WhatsApp',
+    'en.wikipedia.org': 'Wikipedia',
+    'linkedin.com': 'LinkedIn',
+    'youtube.com': 'YouTube',
+    'x.com': 'X',
+  };
+  if (known[domain]) return known[domain];
+  const parts = domain.split('.');
+  const part = (parts.length > 1 ? parts.at(-2) : parts[0])?.replace(/[-_]/g, ' ');
   return part ? part.charAt(0).toUpperCase() + part.slice(1) : domain;
 }
 
@@ -23,6 +34,15 @@ function formatDuration(ms: number): string {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
   return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
+}
+
+function formatDetailedDuration(ms: number): string {
+  const seconds = Math.max(1, Math.round(ms / 1_000));
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  if (minutes < 10 && remainder >= 10) return `${minutes}m ${remainder}s`;
+  return formatDuration(ms);
 }
 
 function formatClock(time: number): string {
@@ -102,6 +122,7 @@ export function AttentionMirrorView() {
   const selectedRange = RANGES.find((item) => item.key === range) ?? RANGES[0];
   const emptyPeriod = range === 'today' ? 'today' : range === 'hour' ? 'in the last hour' : 'in the last 3 hours';
   const emptyReflection = `Nothing observed ${emptyPeriod} yet.`;
+  const placeCount = summary.entries.length;
 
   return (
     <main className="mirror-page">
@@ -114,14 +135,17 @@ export function AttentionMirrorView() {
         </header>
         <p className="mirror-kicker">Your browser, reflected</p>
         <h1 className="mirror-line">
-          {observedEnough ? <>
-            {selectedRange.sentence}, {formatDuration(top.totalMs)} of observed time went to <SiteFavicon domain={top.domain} inline />
-            {second && <> and {formatDuration(second.totalMs)} to <SiteFavicon domain={second.domain} index={1} inline /></>}.
-          </> : emptyReflection}
+          {observedEnough ? <>{formatDuration(summary.totalMs)} observed, spread across {placeCount} {placeCount === 1 ? 'place' : 'places'}.</> : emptyReflection}
         </h1>
+        {observedEnough && <p className="mirror-top-sites">
+          <span>Most time went to</span>
+          <SiteFavicon domain={top.domain} inline />
+          <strong>{formatDetailedDuration(top.totalMs)}</strong>
+          {second && <><span>then</span><SiteFavicon domain={second.domain} index={1} inline /><strong>{formatDetailedDuration(second.totalMs)}</strong></>}
+        </p>}
         {observedEnough && summary.firstObservedAt !== undefined && summary.lastObservedAt !== undefined && <p className="mirror-span">
           Chrome activity observed from <strong>{formatClock(summary.firstObservedAt)}</strong> to <strong>{formatClock(summary.lastObservedAt)}</strong>
-          <span> · {formatDuration(summary.totalMs)} total · {summary.switchCount} {summary.switchCount === 1 ? 'switch' : 'switches'}</span>
+          <span> · {formatDuration(summary.totalMs)} total</span>
         </p>}
         {observedEnough && <section className="mirror-breakdown mirror-hour-chart" aria-label={`${selectedRange.label} attention breakdown`}>
           {visible.map((entry, index) => (
@@ -129,7 +153,7 @@ export function AttentionMirrorView() {
               <SiteFavicon domain={entry.domain} index={index} />
               <strong>{domainName(entry.domain)}</strong>
               <div className="mirror-track"><i className={`mirror-fill mirror-fill-${(index % 5) + 1}`} style={{ width: `${Math.max(3, (entry.totalMs / top.totalMs) * 100)}%` }} /></div>
-              <span>{formatDuration(entry.totalMs)}</span>
+              <span>{formatDetailedDuration(entry.totalMs)}</span>
             </div>
           ))}
         </section>}

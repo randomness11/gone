@@ -416,8 +416,8 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
 .mirror-favicon-3 { background: #4b442b; color: #fdd663; }
 .mirror-favicon-4 { background: #263e30; color: #81c995; }
 .mirror-favicon-5 { background: #41304d; color: #c58af9; }
-.mirror-inline-favicon { width: .74em; height: .74em; margin: 0 .08em; display: inline-grid; border-radius: .16em; vertical-align: -.08em; font-size: 1em; }
-.mirror-inline-favicon > span { font-size: .3em; }
+.mirror-inline-favicon { width: 30px; height: 30px; margin: 0 1px; display: inline-grid; flex: 0 0 auto; border-radius: 7px; font-size: 14px; }
+.mirror-inline-favicon > span { font-size: 9px; }
 .mirror-inline-favicon > img { width: 78%; height: 78%; inset: 11%; }
 .mirror-track { height: 6px; overflow: hidden; border-radius: 3px; background: var(--chrome-surface); }
 .mirror-fill { height: 100%; display: block; border-radius: inherit; background: var(--chrome-blue); }
@@ -434,6 +434,8 @@ button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(26, 115, 232, .
 .mirror-single .mirror-heading { margin-bottom: clamp(52px, 8vh, 86px); }
 .mirror-kicker { margin: 0 0 18px; color: var(--chrome-blue); font-size: 12px; line-height: 18px; font-weight: 500; }
 .mirror-line { max-width: 900px; margin: 0; color: var(--chrome-text); font-size: clamp(46px, 5.8vw, 70px); line-height: 1.08; letter-spacing: -.04em; font-weight: 400; text-wrap: balance; }
+.mirror-top-sites { min-height: 34px; margin: 22px 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--chrome-secondary); font-size: 12px; line-height: 18px; }
+.mirror-top-sites strong { margin-right: 5px; color: var(--chrome-text); font-weight: 500; }
 .mirror-span { margin: 22px 0 0; color: var(--chrome-secondary); font-size: 11px; line-height: 18px; }
 .mirror-span strong { color: var(--chrome-text); font-weight: 500; }
 .mirror-span span { color: var(--chrome-tertiary); }

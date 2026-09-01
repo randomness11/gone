@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GONE",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "A private mirror of where your browser time went.",
   "icons": {
     "16": "icons/icon-16.png",
