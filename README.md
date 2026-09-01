@@ -15,7 +15,20 @@ GONE is a private attention mirror for Chrome. It replaces the New Tab page with
 
 Only the focused Chrome window is counted. Background windows are not treated as simultaneous attention.
 
-## Install from source
+## Install the release build
+
+No Node.js or build tools are required.
+
+1. Open the [latest GONE release](https://github.com/randomness11/gone/releases/latest).
+2. Download `GONE-MVP.zip` from **Assets**.
+3. Extract the ZIP to a permanent folder. Do not delete that folder after loading it.
+4. Open `chrome://extensions`.
+5. Enable **Developer mode** in the top-right corner.
+6. Click **Load unpacked**.
+7. Select the extracted folder containing `manifest.json`.
+8. Open a new tab, click **Continue**, and approve tab and favicon access.
+
+## Build from source
 
 You need:
 
@@ -26,8 +39,8 @@ You need:
 ### 1. Download and build GONE
 
 ```bash
-git clone https://github.com/randomness11/tabscope.git
-cd tabscope
+git clone https://github.com/randomness11/gone.git
+cd gone
 npm install
 npm run build
 ```
@@ -39,7 +52,7 @@ The production extension is created in `dist/`.
 1. Open `chrome://extensions`.
 2. Enable **Developer mode** in the top-right corner.
 3. Click **Load unpacked**.
-4. Select the generated `tabscope/dist/` folder—not the repository root.
+4. Select the generated `gone/dist/` folder—not the repository root.
 5. Confirm that the GONE card shows version `0.5.0`.
 6. Open a new tab.
 7. Click **Continue** and approve tab and favicon access.
