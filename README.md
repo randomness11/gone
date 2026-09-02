@@ -96,6 +96,8 @@ Intervals are retained locally for eight days. The displayed values are conserva
 
 The attention mirror runs entirely on the device. It does not call OpenRouter, an AI model, a third-party logo service, or any external API.
 
+Read the full [Privacy Policy](PRIVACY.md).
+
 Stored locally:
 
 - normalized domains;
